@@ -148,6 +148,7 @@ function AuditSectionCard({ section: rawSection }: { section: AuditSection }) {
 export default function CollapseAuditor() {
   const { user } = useAuth();
   const [, navigate] = useLocation();
+  const [portfolioName, setPortfolioName] = useState("");
   const [portfolioData, setPortfolioData] = useState("");
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [analysisResult, setAnalysisResult] = useState<any>(null);
@@ -173,6 +174,7 @@ export default function CollapseAuditor() {
       // Run the audit
       const result = await runAuditMutation.mutateAsync({
         runId: runResult.runId,
+        portfolioName: portfolioName.trim() || undefined,
         portfolioData: { input: portfolioData, timestamp: new Date().toISOString() },
       });
 
@@ -314,6 +316,21 @@ export default function CollapseAuditor() {
                 <CardDescription>Enter your holdings as comma-separated list with percentages</CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
+                <div>
+                  <label className="text-sm font-medium text-slate-700 mb-2 block">Portfolio Name <span className="text-slate-500 text-xs">(Optional)</span></label>
+                  <input
+                    type="text"
+                    value={portfolioName}
+                    onChange={(e) => setPortfolioName(e.target.value)}
+                    placeholder="e.g., Rollover IRA, Roth IRA, Swing Account, 401k"
+                    className="w-full px-3 py-2 border border-slate-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-slate-800 dark:border-slate-600 dark:text-white"
+                    maxLength={50}
+                  />
+                  <p className="text-xs text-slate-500 mt-1">
+                    Provide a name to track audit history and see comparisons. Leave blank for a one-time standalone report.
+                  </p>
+                </div>
+                
                 <div>
                   <label className="text-sm font-medium text-slate-700">Portfolio Holdings</label>
                   <Textarea

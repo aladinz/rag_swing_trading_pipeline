@@ -65,6 +65,7 @@ export default function PipelineSummary() {
     try {
       await runAuditMutation.mutateAsync({
         runId,
+        portfolioName: undefined, // Pipeline audits are standalone, no history tracking
         portfolioData: {
           stages: allStages?.map((s) => ({
             number: s.stageNumber,

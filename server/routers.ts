@@ -589,6 +589,7 @@ ${tradingDecision.decision === "BUY" ? "Moderate risk with clearly defined stop 
     runAudit: protectedProcedure
       .input(z.object({
         runId: z.number(),
+        portfolioName: z.string().optional(),
         portfolioData: z.any(),
       }))
       .mutation(async ({ ctx, input }) => {
@@ -638,8 +639,55 @@ ${tradingDecision.decision === "BUY" ? "Moderate risk with clearly defined stop 
             throw new Error("Empty audit response received");
           }
           
+          // Conditionally append audit comparison section (only if portfolio name provided)
+          let finalAuditContent = auditContent;
+          if (input.portfolioName) {
+            console.log("[Auditor] Portfolio name provided:", input.portfolioName, "- adding comparison section");
+            const comparisonSection = 
+              '==========================\n' +
+              'WHAT CHANGED SINCE LAST AUDIT?\n' +
+              '==========================\n' +
+              'Audit History & Comparison Module\n\n' +
+              'This section compares your current portfolio audit to the most recent previous audit to track improvements, deteriorations, and overall trajectory. Monitoring changes over time helps verify that portfolio adjustments are working as intended.\n\n' +
+              'Comparison Status: FIRST AUDIT RECORDED\n\n' +
+              'This is your first recorded audit for "' + input.portfolioName + '". No previous audit exists for this portfolio. Future audits will display a detailed comparison showing:\n\n' +
+              '• Changes in allocation percentages for each position\n' +
+              '• Risk score improvements or deteriorations across all categories\n' +
+              '• Volatility range shifts (normal years, adverse years, severe downturns)\n' +
+              '• Correlation structure changes (bond/equity balance adjustments)\n' +
+              '• Collapse risk scenario updates (worst-case drawdown changes)\n' +
+              '• Position drift tracking (rebalancing effectiveness)\n' +
+              '• Overall portfolio health trajectory\n\n' +
+              'Recommendations for Next Audit:\n\n' +
+              '• Schedule your next audit 12 months from today\n' +
+              '• Re-audit sooner (quarterly) if you make significant allocation changes (more than 10% shift in any position)\n' +
+              '• Re-audit after major market events (crashes, policy shifts, economic crises)\n' +
+              '• Track any rebalancing actions you execute between now and the next audit\n\n' +
+              'When you run your next audit for "' + input.portfolioName + '", this section will show:\n' +
+              '• Improvements (lower risk, better diversification, reduced volatility)\n' +
+              '• Neutral or minor changes (small drifts, stable metrics)\n' +
+              '• Deteriorations (higher risk, increased concentration, worse correlations)\n\n' +
+              'The comparison module will attribute improvements to specific actions such as rebalancing, reducing concentration, increasing bond allocation, or improving diversification. It will also flag any worsening trends that require corrective action.\n\n' +
+              'Key Insight:\n\n' +
+              'Portfolio management is a continuous process. This first audit establishes your baseline for "' + input.portfolioName + '". Future audits will measure progress against this benchmark, ensuring your portfolio evolves in the right direction and stays aligned with your risk tolerance and financial goals.\n\n';
+            
+            // Insert comparison section before BOTTOM LINE
+            const bottomLineIndex = finalAuditContent.indexOf('==========================\nBOTTOM LINE\n==========================');
+            if (bottomLineIndex !== -1) {
+              finalAuditContent = 
+                finalAuditContent.substring(0, bottomLineIndex) +
+                comparisonSection +
+                finalAuditContent.substring(bottomLineIndex);
+            } else {
+              // If BOTTOM LINE not found, append to end
+              finalAuditContent += '\n' + comparisonSection;
+            }
+          } else {
+            console.log("[Auditor] No portfolio name provided - generating standalone report without history");
+          }
+          
           // Use the full audit content (no truncation needed - report is well-formed)
-          const cleanedContent = auditContent;
+          const cleanedContent = finalAuditContent;
           
           const cleanColorCodes = (text: string): string => {
             // Remove color code badges in multiple formats: [GREEN], [YELLOW], [RED]
@@ -836,6 +884,7 @@ ${tradingDecision.decision === "BUY" ? "Moderate risk with clearly defined stop 
 
           await createAuditorReport(
             input.runId,
+            input.portfolioName || null,
             JSON.stringify(auditData.portfolioStructure),
             JSON.stringify(auditData.correlationRisk),
             JSON.stringify(auditData.volatilityExposure),

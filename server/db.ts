@@ -330,11 +330,12 @@ export async function getTradingDecision(runId: number) {
   return result.length > 0 ? result[0] : null;
 }
 
-export async function createAuditorReport(runId: number, portfolioStructure: string, correlationRisk: string, volatilityExposure: string, signalQuality: string, narrativeDrift: string, overallRiskScore: string, recommendations: string, criticalIssues?: any) {
+export async function createAuditorReport(runId: number, portfolioName: string | null, portfolioStructure: string, correlationRisk: string, volatilityExposure: string, signalQuality: string, narrativeDrift: string, overallRiskScore: string, recommendations: string, criticalIssues?: any) {
   if (shouldUseMockDb()) {
-    console.log("[Database] Mock: createAuditorReport for run", runId);
+    console.log("[Database] Mock: createAuditorReport for run", runId, "portfolio:", portfolioName || "(standalone)");
     return mockDb.insertAuditorReport({
       runId,
+      portfolioName,
       analysis: JSON.stringify({ portfolioStructure, correlationRisk, volatilityExposure, signalQuality, narrativeDrift, overallRiskScore, criticalIssues }),
       overallRisk: parseFloat(overallRiskScore) || 5,
       recommendations,

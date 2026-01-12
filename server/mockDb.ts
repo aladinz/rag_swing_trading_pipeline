@@ -78,6 +78,7 @@ type TradingDecision = {
 type AuditorReport = {
   id: number;
   runId: number;
+  portfolioName: string | null;
   analysis: string;
   overallRisk: number;
   recommendations: string | null;
@@ -210,13 +211,22 @@ class MockDatabase {
     return this.auditorReports.find(r => r.runId === runId) || null;
   }
 
-  // Get previous auditor report (most recent before current)
-  getPreviousAuditorReport(): AuditorReport | null {
-    if (this.auditorReports.length < 2) {
-      return null; // Need at least 2 audits to compare
+  // Get previous auditor report for specific portfolio (most recent before current)
+  getPreviousAuditorReport(portfolioName: string | null): AuditorReport | null {
+    // If no portfolio name provided, don't return any previous audit
+    if (!portfolioName) {
+      return null;
     }
+    
+    // Filter reports by portfolio name (only compare audits with same name)
+    const portfolioReports = this.auditorReports.filter(r => r.portfolioName === portfolioName);
+    
+    if (portfolioReports.length < 2) {
+      return null; // Need at least 2 audits for this portfolio to compare
+    }
+    
     // Sort by creation date descending and get the second most recent
-    const sorted = [...this.auditorReports].sort((a, b) => 
+    const sorted = [...portfolioReports].sort((a, b) => 
       b.createdAt.getTime() - a.createdAt.getTime()
     );
     return sorted[1] || null;
