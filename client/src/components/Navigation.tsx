@@ -3,6 +3,7 @@ import { Link, useLocation } from "wouter";
 import { Menu, TrendingDown, Home, BarChart3, Calendar } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
+import { ThemeToggle } from "@/components/ThemeToggle";
 
 const navigationItems = [
   { label: "Home", href: "/", icon: Home },
@@ -55,6 +56,11 @@ export function TopNavigation() {
                 isActive={location === item.href}
               />
             ))}
+            
+            {/* Theme Toggle */}
+            <div className="ml-2">
+              <ThemeToggle />
+            </div>
           </div>
 
 
@@ -71,32 +77,37 @@ export function TopNavigation() {
           </a>
         </Link>
 
-        {/* Mobile Menu Button */}
-        <Sheet open={open} onOpenChange={setOpen}>
-          <SheetTrigger asChild>
-            <Button variant="ghost" size="sm">
-              <Menu className="w-5 h-5" />
-            </Button>
-          </SheetTrigger>
-          <SheetContent side="right" className="w-64">
-            <div className="flex flex-col gap-4 mt-8">
-              {/* Mobile Nav Links */}
-              <div className="flex flex-col gap-2">
-                {navigationItems.map((item) => (
-                  <NavLink
-                    key={item.href}
-                    {...item}
-                    isActive={location === item.href}
-                    onClick={() => setOpen(false)}
-                  />
-                ))}
-              </div>
+        {/* Mobile Controls */}
+        <div className="flex items-center gap-2">
+          <ThemeToggle />
+          
+          {/* Mobile Menu Button */}
+          <Sheet open={open} onOpenChange={setOpen}>
+            <SheetTrigger asChild>
+              <Button variant="ghost" size="sm">
+                <Menu className="w-5 h-5" />
+              </Button>
+            </SheetTrigger>
+            <SheetContent side="right" className="w-64">
+              <div className="flex flex-col gap-4 mt-8">
+                {/* Mobile Nav Links */}
+                <div className="flex flex-col gap-2">
+                  {navigationItems.map((item) => (
+                    <NavLink
+                      key={item.href}
+                      {...item}
+                      isActive={location === item.href}
+                      onClick={() => setOpen(false)}
+                    />
+                  ))}
+                </div>
 
-              {/* Divider */}
-              <div className="border-t border-gray-200 dark:border-gray-800" />
-            </div>
-          </SheetContent>
-        </Sheet>
+                {/* Divider */}
+                <div className="border-t border-gray-200 dark:border-gray-800" />
+              </div>
+            </SheetContent>
+          </Sheet>
+        </div>
       </nav>
     </>
   );

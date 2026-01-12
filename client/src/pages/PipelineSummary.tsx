@@ -952,11 +952,10 @@ export default function PipelineSummary() {
                     {typeof auditorReport === "object" && auditorReport !== null && (
                       <>
                         {/* Executive Summary */}
-                        {/* Executive Summary - Light mode only */}
                         {(auditorReport as any).executiveSummary && (
-                          <Card className="border-2 border-slate-300 bg-white">
+                          <Card className="border-2 border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900">
                             <CardContent className="pt-6">
-                              <div className="prose prose-sm max-w-none">
+                              <div className="prose prose-sm max-w-none dark:prose-invert">
                                 <Streamdown>{String((auditorReport as any).executiveSummary)}</Streamdown>
                               </div>
                             </CardContent>

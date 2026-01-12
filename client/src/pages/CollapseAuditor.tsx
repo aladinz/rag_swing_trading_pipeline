@@ -414,7 +414,7 @@ BND 15%`}
               </CardContent>
             </Card>
 
-            <Card className="border-blue-200 bg-blue-50">
+            <Card className="border-blue-200 dark:border-blue-900 bg-blue-50 dark:bg-blue-950">
               <CardHeader>
                 <CardTitle className="text-sm flex items-center gap-2">
                   <AlertCircle className="w-4 h-4" />
@@ -422,7 +422,7 @@ BND 15%`}
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <p className="text-xs text-blue-900">
+                <p className="text-xs text-blue-900 dark:text-blue-200">
                   The auditor provides a comprehensive risk score (1-10) and identifies critical issues in your portfolio.
                 </p>
               </CardContent>
@@ -434,9 +434,9 @@ BND 15%`}
         {analysisResult && (
           <div className="mt-12 space-y-8">
             {/* Executive Summary */}
-            <Card className="border border-slate-300 bg-slate-50">
+            <Card className="border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-900">
               <CardContent className="pt-6">
-                <div className="prose prose-sm max-w-none prose-headings:text-slate-900 prose-headings:font-bold prose-p:text-slate-800 prose-li:text-slate-800 prose-strong:text-slate-900 prose-table:text-slate-800 prose-th:text-slate-900 prose-th:bg-slate-200 prose-td:text-slate-800 prose-td:border-slate-300">
+                <div className="prose prose-sm max-w-none dark:prose-invert prose-headings:text-slate-900 dark:prose-headings:text-slate-100 prose-headings:font-bold prose-p:text-slate-800 dark:prose-p:text-slate-300 prose-li:text-slate-800 dark:prose-li:text-slate-300 prose-strong:text-slate-900 dark:prose-strong:text-slate-100 prose-table:text-slate-800 dark:prose-table:text-slate-300 prose-th:text-slate-900 dark:prose-th:text-slate-100 prose-th:bg-slate-200 dark:prose-th:bg-slate-800 prose-td:text-slate-800 dark:prose-td:text-slate-300 prose-td:border-slate-300 dark:prose-td:border-slate-700">
                   <Streamdown>{String(analysisResult.executiveSummary || "Audit analysis completed")}</Streamdown>
                 </div>
               </CardContent>
