@@ -210,6 +210,18 @@ class MockDatabase {
     return this.auditorReports.find(r => r.runId === runId) || null;
   }
 
+  // Get previous auditor report (most recent before current)
+  getPreviousAuditorReport(): AuditorReport | null {
+    if (this.auditorReports.length < 2) {
+      return null; // Need at least 2 audits to compare
+    }
+    // Sort by creation date descending and get the second most recent
+    const sorted = [...this.auditorReports].sort((a, b) => 
+      b.createdAt.getTime() - a.createdAt.getTime()
+    );
+    return sorted[1] || null;
+  }
+
   // Get all stages for a run with their results
   getStagesWithResultsForRun(runId: number): Array<{
     stageId: number;

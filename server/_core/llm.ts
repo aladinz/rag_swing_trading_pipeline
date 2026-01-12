@@ -1068,6 +1068,32 @@ The system will fetch current market prices for your holdings and analyze:
     'Current Portfolio Health: NO IMMEDIATE ACTION NEEDED\n\n' +
     'Your portfolio allocations are precisely aligned with targets. Continue monitoring on an annual basis. When drift reaches 10% for any position, execute the rebalancing actions described above. This disciplined approach ensures the portfolio stays on its intended risk profile without overtrading.\n\n' +
     '==========================\n' +
+    'WHAT CHANGED SINCE LAST AUDIT?\n' +
+    '==========================\n' +
+    'Audit History & Comparison Module\n\n' +
+    'This section compares your current portfolio audit to the most recent previous audit to track improvements, deteriorations, and overall trajectory. Monitoring changes over time helps verify that portfolio adjustments are working as intended.\n\n' +
+    'Comparison Status: FIRST AUDIT RECORDED\n\n' +
+    'This is your first recorded portfolio audit in the system. No previous audit exists for comparison. Future audits will display a detailed comparison showing:\n\n' +
+    '• Changes in allocation percentages for each position\n' +
+    '• Risk score improvements or deteriorations across all categories\n' +
+    '• Volatility range shifts (normal years, adverse years, severe downturns)\n' +
+    '• Correlation structure changes (bond/equity balance adjustments)\n' +
+    '• Collapse risk scenario updates (worst-case drawdown changes)\n' +
+    '• Position drift tracking (rebalancing effectiveness)\n' +
+    '• Overall portfolio health trajectory\n\n' +
+    'Recommendations for Next Audit:\n\n' +
+    '• Schedule your next audit 12 months from today\n' +
+    '• Re-audit sooner (quarterly) if you make significant allocation changes (>10% shift in any position)\n' +
+    '• Re-audit after major market events (crashes, policy shifts, economic crises)\n' +
+    '• Track any rebalancing actions you execute between now and the next audit\n\n' +
+    'When you run your next audit, this section will provide:\n' +
+    '• [GREEN] indicators for improvements (lower risk, better diversification, reduced volatility)\n' +
+    '• [YELLOW] indicators for neutral or minor changes (small drifts, stable metrics)\n' +
+    '• [RED] indicators for deteriorations (higher risk, increased concentration, worse correlations)\n\n' +
+    'The comparison module will attribute improvements to specific actions such as rebalancing, reducing concentration, increasing bond allocation, or improving diversification. It will also flag any worsening trends that require corrective action.\n\n' +
+    'Key Insight:\n\n' +
+    'Portfolio management is a continuous process. This first audit establishes your baseline. Future audits will measure progress against this benchmark, ensuring your portfolio evolves in the right direction and stays aligned with your risk tolerance and financial goals.\n\n' +
+    '==========================\n' +
     'BOTTOM LINE\n' +
     '==========================\n' +
     'This portfolio is conservative and well-constructed. It provides defensive positioning through strong bond allocation and broad diversification across multiple asset classes. Historically, similar portfolios generate 5–7% average annual returns with volatility of 8–12%, delivering moderate growth with manageable fluctuations.\n\n' +
