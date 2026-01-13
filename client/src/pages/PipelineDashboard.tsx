@@ -48,16 +48,139 @@ export default function PipelineDashboard() {
     }
 
     const input = unifiedInput.trim();
+    
+    // Parse holdings from unified input
+    const holdingsMatch = input.match(/Holdings?:\s*([^\n]+)/i);
+    const holdings = holdingsMatch ? holdingsMatch[1].trim() : "";
+    
+    // Parse market context
+    const marketMatch = input.match(/Market:\s*([^\n]+)/i);
+    const market = marketMatch ? marketMatch[1].trim() : "";
+    
+    // Parse goal
+    const goalMatch = input.match(/Goal:\s*([^\n]+)/i);
+    const goal = goalMatch ? goalMatch[1].trim() : "";
+    
+    // Parse portfolio name
+    const nameMatch = input.match(/Portfolio:\s*([^\n]+)/i);
+    const portfolioName = nameMatch ? nameMatch[1].trim() : "My Investments";
+
     const autoFilledInputs: Record<number, string> = {
-      0: `Reset all biases and assumptions. Starting fresh analysis with the following context:\n\n${input.substring(0, 200)}...`,
-      1: `Retrieve broad market signals and relevant data:\n\nPortfolio Context: ${input.substring(0, 150)}...\n\nMarket Signals: Analyzing macro trends, sector performance, and key indicators based on provided data.`,
-      2: `Prioritize signals by importance:\n\n1. Primary signals from portfolio data\n2. Secondary market indicators\n3. Supporting trend analysis\n\nBased on: ${input.substring(0, 100)}...`,
-      3: `Market Story Summary:\n\nThe portfolio shows ${input.includes("IRA") || input.includes("portfolio") ? "structured positioning" : "market exposure"} with key focus on ${input.includes("bond") || input.includes("SGOV") || input.includes("treasury") ? "fixed income stability" : "growth allocation"}. Current environment suggests ${input.includes("risk") ? "risk-aware positioning" : "balanced approach"} with attention to diversification.`,
-      4: `Risk Assessment:\n\nCurrent portfolio structure based on the provided data shows ${input.includes("50") || input.includes("high") ? "significant" : "moderate"} concentration. Key risks include market volatility, interest rate sensitivity, and sector concentration. Overall risk posture appears ${input.includes("conservative") || input.includes("safe") ? "conservative" : "moderate"} given current allocations.`,
-      5: `Execution Guidance:\n\nBased on current portfolio state:\n- Monitor positions for drift beyond target allocations\n- Consider rebalancing if any position exceeds threshold\n- Maintain tax efficiency in adjustments\n- Execute changes during optimal market conditions\n\nSpecific actions will depend on actual vs target allocations from the data provided.`,
-      6: `Portfolio Scoring:\n\n• Volatility Score: Medium (based on asset mix)\n• Correlation Score: Moderate diversification\n• Collapse Risk: Low to moderate\n• Drift Analysis: Monitoring required\n• Diversification: Adequate across asset classes\n\nOverall Portfolio Health: Good, with minor monitoring points.`,
-      7: `Decision Recommendation:\n\nBased on analysis: ${input.includes("rebalance") ? "REBALANCE" : input.includes("hold") ? "HOLD" : "MONITOR"}\n\nRationale: Current portfolio positioning ${input.includes("drift") ? "shows drift requiring adjustment" : "appears stable"}. ${input.includes("risk") ? "Risk levels warrant attention" : "Risk profile is acceptable"}. Recommended action aligns with long-term strategy while managing short-term concerns.`,
-      8: `Key Takeaways:\n\n1. Portfolio structure reviewed and analyzed\n2. Risk assessment completed within acceptable parameters\n3. Current positioning ${input.includes("good") || input.includes("stable") ? "is appropriate" : "requires monitoring"}\n4. Next review: 30 days or upon significant market change\n\nAction Items: ${input.includes("rebalance") ? "Execute rebalancing plan" : "Continue monitoring current allocations"}.`
+      0: `Reset all biases and assumptions. Starting fresh analysis.
+
+Portfolio: ${portfolioName}
+Holdings: ${holdings}
+Market Context: ${market}
+Goal: ${goal}
+
+Clearing all previous assumptions and beginning objective analysis.`,
+
+      1: `Retrieve and analyze current portfolio data:
+
+**Portfolio Holdings:**
+${holdings}
+
+**Market Environment:**
+${market}
+
+**Investment Goal:**
+${goal}
+
+Analyze these holdings in the current market context.`,
+
+      2: `Rank and prioritize key factors:
+
+**Holdings to Evaluate:**
+${holdings}
+
+**Priority Analysis:**
+1. Current market conditions: ${market}
+2. Portfolio goal alignment: ${goal}
+3. Individual position strength
+4. Overall risk/reward balance
+
+Focus on most impactful factors affecting this specific portfolio.`,
+
+      3: `Summarize the market story for this portfolio:
+
+**Portfolio:** ${holdings}
+**Market:** ${market}
+**Goal:** ${goal}
+
+Provide a concise 3-5 sentence narrative explaining how current market conditions affect this specific portfolio and whether it aligns with stated goals.`,
+
+      4: `Assess portfolio risk:
+
+**Current Holdings:**
+${holdings}
+
+**Goal:**
+${goal}
+
+**Market Context:**
+${market}
+
+Evaluate concentration risk, volatility exposure, correlation, and overall risk level. Consider if risk profile matches stated investment goal.`,
+
+      5: `Provide execution guidance:
+
+**Portfolio:**
+${holdings}
+
+**Goal:**
+${goal}
+
+Recommend specific actions:
+- Should any positions be rebalanced?
+- Are allocations aligned with goals?
+- Any timing considerations given market conditions?
+- Tax-efficient execution suggestions`,
+
+      6: `Score this portfolio:
+
+**Holdings:**
+${holdings}
+
+**Goal:**
+${goal}
+
+Provide scores (1-10 scale):
+• Volatility: ___/10
+• Diversification: ___/10  
+• Goal Alignment: ___/10
+• Collapse Protection: ___/10
+• Overall Health: ___/10
+
+Explain each score based on actual holdings.`,
+
+      7: `Make a clear decision:
+
+**Portfolio:**
+${holdings}
+
+**Goal:**
+${goal}
+
+**Market:**
+${market}
+
+Recommend ONE action: HOLD / REBALANCE / ADJUST / MONITOR
+
+Provide clear rationale based on portfolio holdings, market conditions, and investment goals.`,
+
+      8: `Debrief and extract lessons:
+
+**Portfolio Reviewed:**
+${holdings}
+
+**Key Takeaways:**
+1. Current portfolio status
+2. Alignment with goal: ${goal}
+3. Market impact: ${market}
+4. Recommended next steps
+
+**Action Items:**
+List specific next steps for this portfolio.`
     };
 
     setStageInputs(autoFilledInputs);
@@ -224,11 +347,11 @@ export default function PipelineDashboard() {
                       onChange={(e) => setUnifiedInput(e.target.value)}
                       placeholder="Enter portfolio data, market signals, goals, or any notes. This single input will auto-fill all 9 pipeline stages.
 
-Example:
-- Portfolio: Traditional IRA with SGOV 50%, SCHD 10%, VTI 30%, VXUS 10%
-- Goal: Conservative growth with income
-- Market context: Rising rates, tech volatility
-- Concerns: Portfolio drift, rebalancing needs"
+Format (use this structure for best results):
+Portfolio: My Investments
+Holdings: SGOV 50%, SCHD 10%, VTI 30%, VXUS 10%
+Market: CPI cooling, VIX low, tech leading
+Goal: Defensive, low volatility, collapse protection"
                       className="mt-2 min-h-40 font-mono text-sm"
                     />
                     <p className="text-xs text-muted-foreground mt-2">
