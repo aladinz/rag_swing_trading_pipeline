@@ -306,8 +306,30 @@ export const appRouter = router({
                 tradingDecision.quantity
               );
 
+              // Detect if this is portfolio or trading analysis
+              const isPortfolio = tradingDecision.symbol === "PORTFOLIO" || 
+                                  tradingDecision.decision === "REBALANCE" || 
+                                  tradingDecision.decision === "ADJUST";
+
               // Create pipeline summary
-              const overallSummary = `
+              const overallSummary = isPortfolio ? `
+# Portfolio Analysis Complete
+
+All 9 stages of the portfolio analysis pipeline have been successfully executed. The comprehensive analysis evaluated portfolio structure, risk concentration, asset allocation, goal alignment, diversification, rebalancing needs, and provided final recommendations.
+
+## Portfolio Overview
+- **Stages Completed:** 9/9
+- **Analysis Duration:** ${new Date().toLocaleTimeString()}
+- **Recommendation:** ${tradingDecision.decision}
+- **Portfolio:** ${tradingDecision.symbol}
+- **Action Required:** ${tradingDecision.decision === "REBALANCE" ? "Rebalance positions to target allocations" : tradingDecision.decision === "ADJUST" ? "Minor adjustments recommended" : "Continue monitoring"}
+
+## Key Highlights
+The analysis confirmed the portfolio ${tradingDecision.decision === "HOLD" ? "is well-positioned and aligned with stated goals" : "requires attention to maintain optimal risk/return profile"}. Current allocations show ${tradingDecision.decision === "HOLD" ? "acceptable deviation from targets" : "drift that should be addressed"}.
+
+## Risk Assessment
+${tradingDecision.decision === "HOLD" ? "Portfolio demonstrates adequate diversification with acceptable risk levels. Continue monitoring for drift beyond tolerance bands." : "Recommended actions will improve risk-adjusted returns and goal alignment. Consider tax implications when executing adjustments."}
+              `.trim() : `
 # Trading Pipeline Execution Complete
 
 All 9 stages of the swing trading analysis pipeline have been successfully executed. The comprehensive analysis evaluated market sentiment, volume patterns, risk parameters, entry signals, position sizing, exit strategies, historical statistics, and made a final trading decision.
@@ -334,17 +356,28 @@ ${tradingDecision.decision === "BUY" ? "Moderate risk with clearly defined stop 
                 analysis: s.analysis,
               }));
 
+              const recommendedActions = isPortfolio ? [
+                `Review portfolio recommendation: ${tradingDecision.decision}`,
+                "Check current allocations against target weights",
+                "Consider tax implications before executing changes",
+                "Monitor portfolio drift over next 30-90 days"
+              ] : [
+                `Execute ${tradingDecision.decision} order for ${tradingDecision.symbol}`,
+                "Set stop loss at " + (tradingDecision.stopLoss || "defined support level"),
+                "Monitor for entry confirmation at market open",
+                "Review position after first profit target hit"
+              ];
+
+              const riskAssessment = isPortfolio 
+                ? (tradingDecision.decision === "HOLD" ? "Low risk - Portfolio well-balanced" : "Moderate risk - Adjustments recommended")
+                : (tradingDecision.decision === "BUY" ? "Moderate risk - Favorable setup" : "Low risk - Wait for confirmation");
+
               await createPipelineSummary(
                 input.runId,
                 overallSummary,
                 keyFindings,
-                [
-                  `Execute ${tradingDecision.decision} order for ${tradingDecision.symbol}`,
-                  "Set stop loss at " + (tradingDecision.stopLoss || "defined support level"),
-                  "Monitor for entry confirmation at market open",
-                  "Review position after first profit target hit"
-                ],
-                tradingDecision.decision === "BUY" ? "Moderate risk - Favorable setup" : "Low risk - Wait for confirmation",
+                recommendedActions,
+                riskAssessment,
                 { 
                   stages: 9, 
                   completed: true, 
@@ -508,8 +541,30 @@ ${tradingDecision.decision === "BUY" ? "Moderate risk with clearly defined stop 
 
           console.log("[Pipeline] Trading decision saved to database");
 
+          // Detect if this is portfolio or trading analysis
+          const isPortfolio = tradingDecision.symbol === "PORTFOLIO" || 
+                              tradingDecision.decision === "REBALANCE" || 
+                              tradingDecision.decision === "ADJUST";
+
           // Create pipeline summary with all stage results
-          const overallSummary = `
+          const overallSummary = isPortfolio ? `
+# Portfolio Analysis Complete
+
+All 9 stages of the portfolio analysis pipeline have been successfully executed. The comprehensive analysis evaluated portfolio structure, risk concentration, asset allocation, goal alignment, diversification, rebalancing needs, and provided final recommendations.
+
+## Portfolio Overview
+- **Stages Completed:** 9/9
+- **Analysis Duration:** ${new Date().toLocaleTimeString()}
+- **Recommendation:** ${tradingDecision.decision}
+- **Portfolio:** ${tradingDecision.symbol}
+- **Action Required:** ${tradingDecision.decision === "REBALANCE" ? "Rebalance positions to target allocations" : tradingDecision.decision === "ADJUST" ? "Minor adjustments recommended" : "Continue monitoring"}
+
+## Key Highlights
+The analysis confirmed the portfolio ${tradingDecision.decision === "HOLD" ? "is well-positioned and aligned with stated goals" : "requires attention to maintain optimal risk/return profile"}. Current allocations show ${tradingDecision.decision === "HOLD" ? "acceptable deviation from targets" : "drift that should be addressed"}.
+
+## Risk Assessment
+${tradingDecision.decision === "HOLD" ? "Portfolio demonstrates adequate diversification with acceptable risk levels. Continue monitoring for drift beyond tolerance bands." : "Recommended actions will improve risk-adjusted returns and goal alignment. Consider tax implications when executing adjustments."}
+          `.trim() : `
 # Trading Pipeline Execution Complete
 
 All 9 stages of the swing trading analysis pipeline have been successfully executed. The comprehensive analysis evaluated market sentiment, volume patterns, risk parameters, entry signals, position sizing, exit strategies, historical statistics, and made a final trading decision.
@@ -537,17 +592,28 @@ ${tradingDecision.decision === "BUY" ? "Moderate risk with clearly defined stop 
             analysis: r.analysis,
           }));
 
+          const recommendedActions = isPortfolio ? [
+            `Review portfolio recommendation: ${tradingDecision.decision}`,
+            "Check current allocations against target weights",
+            "Consider tax implications before executing changes",
+            "Monitor portfolio drift over next 30-90 days"
+          ] : [
+            `Execute ${tradingDecision.decision} order for ${tradingDecision.symbol}`,
+            "Set stop loss at " + (tradingDecision.stopLoss || "defined support level"),
+            "Monitor for entry confirmation at market open",
+            "Review position after first profit target hit"
+          ];
+
+          const riskAssessment = isPortfolio 
+            ? (tradingDecision.decision === "HOLD" ? "Low risk - Portfolio well-balanced" : "Moderate risk - Adjustments recommended")
+            : (tradingDecision.decision === "BUY" ? "Moderate risk - Favorable setup" : "Low risk - Wait for confirmation");
+
           await createPipelineSummary(
             input.runId,
             overallSummary,
             keyFindings,
-            [
-              `Execute ${tradingDecision.decision} order for ${tradingDecision.symbol}`,
-              "Set stop loss at " + (tradingDecision.stopLoss || "defined support level"),
-              "Monitor for entry confirmation at market open",
-              "Review position after first profit target hit"
-            ],
-            tradingDecision.decision === "BUY" ? "Moderate risk - Favorable setup" : "Low risk - Wait for confirmation",
+            recommendedActions,
+            riskAssessment,
             { 
               stages: 9, 
               completed: true, 
