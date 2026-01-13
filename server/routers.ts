@@ -19,6 +19,7 @@ import {
   getTradingDecision,
   createAuditorReport,
   getAuditorReport,
+  getAllPortfolioProfiles,
   createPipelineSummary,
   getPipelineSummary,
   getUserPipelineRuns,
@@ -908,6 +909,12 @@ ${tradingDecision.decision === "BUY" ? "Moderate risk with clearly defined stop 
       .input(z.object({ runId: z.number() }))
       .query(async ({ input }) => {
         return await getAuditorReport(input.runId);
+      }),
+
+    // Get all portfolio profiles with timestamps
+    getProfiles: protectedProcedure
+      .query(async () => {
+        return await getAllPortfolioProfiles();
       }),
   }),
 });

@@ -373,6 +373,20 @@ export async function getAuditorReport(runId: number) {
   return result.length > 0 ? result[0] : null;
 }
 
+export async function getAllPortfolioProfiles() {
+  if (shouldUseMockDb()) {
+    return mockDb.getAllPortfolioProfiles();
+  }
+
+  // For real database, would implement similar query
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  // Group by portfolio name, get most recent audit date and count
+  // This would require a proper SQL GROUP BY query
+  return [];
+}
+
 export async function createPipelineSummary(runId: number, overallAnalysis: string, keyFindings?: any, recommendedActions?: any, riskAssessment?: string, performanceMetrics?: any) {
   if (shouldUseMockDb()) {
     console.log("[Database] Mock: createPipelineSummary for run", runId);

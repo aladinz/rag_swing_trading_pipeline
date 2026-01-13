@@ -232,6 +232,42 @@ class MockDatabase {
     return sorted[1] || null;
   }
 
+  // Get all portfolio profiles with timestamps (only named portfolios)
+  getAllPortfolioProfiles(): Array<{ portfolioName: string; mostRecentAudit: Date; auditCount: number }> {
+    // Group audits by portfolio name (exclude unnamed portfolios)
+    const profileMap = new Map<string, AuditorReport[]>();
+    
+    this.auditorReports.forEach(report => {
+      if (report.portfolioName) {
+        if (!profileMap.has(report.portfolioName)) {
+          profileMap.set(report.portfolioName, []);
+        }
+        profileMap.get(report.portfolioName)!.push(report);
+      }
+    });
+    
+    // Build profile list with most recent timestamp
+    const profiles: Array<{ portfolioName: string; mostRecentAudit: Date; auditCount: number }> = [];
+    
+    profileMap.forEach((reports, portfolioName) => {
+      // Sort by creation date descending to get most recent
+      const sorted = [...reports].sort((a, b) => 
+        b.createdAt.getTime() - a.createdAt.getTime()
+      );
+      
+      profiles.push({
+        portfolioName,
+        mostRecentAudit: sorted[0].createdAt,
+        auditCount: reports.length
+      });
+    });
+    
+    // Sort profiles by most recent audit (newest first)
+    return profiles.sort((a, b) => 
+      b.mostRecentAudit.getTime() - a.mostRecentAudit.getTime()
+    );
+  }
+
   // Get all stages for a run with their results
   getStagesWithResultsForRun(runId: number): Array<{
     stageId: number;

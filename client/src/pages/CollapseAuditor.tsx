@@ -152,9 +152,13 @@ export default function CollapseAuditor() {
   const [portfolioData, setPortfolioData] = useState("");
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [analysisResult, setAnalysisResult] = useState<any>(null);
+  const [showProfiles, setShowProfiles] = useState(false);
 
   const runAuditMutation = trpc.auditor.runAudit.useMutation();
   const createRunMutation = trpc.pipeline.createRun.useMutation();
+  const profilesQuery = trpc.auditor.getProfiles.useQuery(undefined, {
+    enabled: showProfiles,
+  });
 
   const handleRunAudit = async () => {
     if (!portfolioData.trim()) {
@@ -389,6 +393,68 @@ BND 15%`}
 
           {/* Analysis Dimensions Sidebar */}
           <div className="space-y-4">
+            {/* Portfolio Profiles Section */}
+            <Card>
+              <CardHeader>
+                <div className="flex items-center justify-between">
+                  <CardTitle className="text-lg">Portfolio Profiles</CardTitle>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setShowProfiles(!showProfiles)}
+                    className="text-xs"
+                  >
+                    {showProfiles ? "Hide" : "Show"}
+                  </Button>
+                </div>
+              </CardHeader>
+              {showProfiles && (
+                <CardContent>
+                  {profilesQuery.isLoading ? (
+                    <div className="flex items-center justify-center py-4">
+                      <Loader2 className="w-4 h-4 animate-spin text-slate-400" />
+                    </div>
+                  ) : profilesQuery.data && profilesQuery.data.length > 0 ? (
+                    <div className="space-y-3">
+                      <p className="text-xs text-slate-500 mb-2">
+                        Previously audited portfolios with timestamps
+                      </p>
+                      {profilesQuery.data.map((profile) => (
+                        <div
+                          key={profile.portfolioName}
+                          className="p-3 bg-blue-50 dark:bg-blue-950 rounded-lg border border-blue-200 dark:border-blue-900"
+                        >
+                          <div className="flex items-start justify-between gap-2">
+                            <div className="flex-1 min-w-0">
+                              <p className="font-medium text-sm text-slate-900 dark:text-white truncate">
+                                {profile.portfolioName}
+                              </p>
+                              <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
+                                Last audit: {new Date(profile.mostRecentAudit).toLocaleDateString('en-US', {
+                                  month: 'short',
+                                  day: 'numeric',
+                                  year: 'numeric',
+                                  hour: '2-digit',
+                                  minute: '2-digit'
+                                })}
+                              </p>
+                              <p className="text-xs text-blue-600 dark:text-blue-400 mt-0.5">
+                                {profile.auditCount} audit{profile.auditCount !== 1 ? 's' : ''} total
+                              </p>
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <p className="text-sm text-slate-500 py-4 text-center">
+                      No portfolio profiles saved yet. Run an audit with a portfolio name to start tracking.
+                    </p>
+                  )}
+                </CardContent>
+              )}
+            </Card>
+
             <Card>
               <CardHeader>
                 <CardTitle className="text-lg">Analysis Areas</CardTitle>
