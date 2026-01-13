@@ -849,32 +849,40 @@ The system will fetch current market prices for your holdings and analyze:
 
   console.log(`[Auditor] Risk Assessment: Tech=${techConcentration.toFixed(1)}%, Bonds=${bondsConcentration.toFixed(1)}%, Overall Risk=${overallRiskScore}/10`);
 
+  // Generate holdings list dynamically from parsed data
+  const holdingsListText = holdingsList.map(([ticker, h]) => `• ${ticker} (${h.weight.toFixed(1)}%)`).join('\n');
+  
+  // Generate current date
+  const currentDate = new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
+  
+  // Calculate gold allocation (or 0 if no gold)
+  const goldAllocation = holdingsList
+    .filter(([ticker]) => ticker.toUpperCase().includes('GLD') || ticker.toUpperCase() === 'GOLD')
+    .reduce((sum, [_, h]) => sum + h.weight, 0);
+  
+  const equitiesAllocation = (100 - bondsConcentration - goldAllocation).toFixed(1);
+
   let reportText = '==========================\n' +
     'PORTFOLIO AUDIT REPORT\n' +
     '==========================\n\n' +
     'Holdings:\n' +
-    '• SGOV (10.0%)\n' +
-    '• VGSH (35.0%)\n' +
-    '• GLDM (15.0%)\n' +
-    '• SCHD (15.0%)\n' +
-    '• VTIP (15.0%)\n' +
-    '• USMV (10.0%)\n\n' +
-    'Report Date: January 10, 2026\n\n' +
+    holdingsListText + '\n\n' +
+    'Report Date: ' + currentDate + '\n\n' +
     '==========================\n' +
     'SUMMARY TABLE\n' +
     '==========================\n\n' +
     '| Category        | Allocation |\n' +
     '|-----------------|------------|\n' +
     '| Bonds           | ' + bondsConcentration.toFixed(1) + '%      |\n' +
-    '| Equities        | ' + (100 - bondsConcentration - 15).toFixed(1) + '%      |\n' +
-    '| Gold            | 15.0%      |\n' +
+    '| Equities        | ' + equitiesAllocation + '%      |\n' +
+    (goldAllocation > 0 ? '| Gold            | ' + goldAllocation.toFixed(1) + '%      |\n' : '') +
     '| Total Holdings  | ' + holdingsList.length + '          |\n' +
     '| Asset Categories| ' + sectorCount + '          |\n\n' +
     'Overall Risk Score: ' + overallRiskScore + '/10 — ' + riskLabel + '\n\n' +
     '==========================\n' +
     'EXECUTIVE SUMMARY\n' +
     '==========================\n' +
-    'This portfolio is designed for capital preservation with a low-risk profile. It holds six securities across five distinct asset categories: short-term government bonds, inflation-protected bonds, gold, dividend-focused equities, and low-volatility equities. The ' + bondsConcentration.toFixed(1) + '% bond allocation provides a defensive foundation, while the ' + (100 - bondsConcentration - 15).toFixed(1) + '% equity allocation and 15% gold position offer diversification without excessive risk exposure. This structure is appropriate for investors prioritizing stability over growth.\n\n' +
+    'This portfolio contains ' + holdingsList.length + ' holdings across ' + sectorCount + ' distinct asset categories. The ' + bondsConcentration.toFixed(1) + '% bond allocation provides a defensive foundation, while the ' + equitiesAllocation + '% equity allocation' + (goldAllocation > 0 ? ' and ' + goldAllocation.toFixed(1) + '% gold position' : '') + ' offer diversification' + (goldAllocation > 0 || bondsConcentration >= 50 ? ' without excessive risk exposure' : '') + '. This structure is appropriate for investors prioritizing ' + (bondsConcentration >= 60 ? 'stability over growth' : bondsConcentration >= 40 ? 'balanced growth with moderate risk' : 'growth with higher risk tolerance') + '.\n\n' +
     '==========================\n' +
     'PORTFOLIO STRUCTURE\n' +
     '==========================\n' +
@@ -916,10 +924,16 @@ The system will fetch current market prices for your holdings and analyze:
     '==========================\n\n' +
     'This section analyzes what happens to the portfolio during extreme market stress scenarios that exceed normal historical volatility ranges. These stress tests help answer: "What is my worst-case loss?"\n\n' +
     'Portfolio Composition Reminder:\n' +
-    '• Bonds: 60% (SGOV 10%, VGSH 35%, VTIP 15%)\n' +
-    '• Equities: 25% (SCHD 15%, USMV 10%)\n' +
-    '• Gold: 15% (GLDM)\n\n' +
-    '---\n\n' +
+    (bondsConcentration > 0 ? '• Bonds: ' + bondsConcentration.toFixed(1) + '% (' + holdingsList.filter(([t]) => 
+      ['SGOV', 'VGSH', 'VTIP', 'BND', 'AGG', 'TLT', 'SHY', 'IEF', 'TIP'].some(b => t.toUpperCase().includes(b))
+    ).map(([t, h]) => t + ' ' + h.weight.toFixed(1) + '%').join(', ') + ')\n' : '') +
+    (parseFloat(equitiesAllocation) > 0 ? '• Equities: ' + equitiesAllocation + '% (' + holdingsList.filter(([t]) => 
+      !['SGOV', 'VGSH', 'VTIP', 'BND', 'AGG', 'TLT', 'SHY', 'IEF', 'TIP', 'GLD', 'GLDM', 'IAU', 'GOLD'].some(b => t.toUpperCase().includes(b))
+    ).map(([t, h]) => t + ' ' + h.weight.toFixed(1) + '%').join(', ') + ')\n' : '') +
+    (goldAllocation > 0 ? '• Gold: ' + goldAllocation.toFixed(1) + '% (' + holdingsList.filter(([t]) => 
+      ['GLD', 'GLDM', 'IAU', 'GOLD'].some(g => t.toUpperCase().includes(g))
+    ).map(([t, h]) => t).join(', ') + ')\n' : '') +
+    '\n---\n\n' +
     'SCENARIO 1: Multi-Asset Correlation Breakdown\n\n' +
     'Description:\n' +
     'Under extreme stress, the historical protective relationships between assets break down. Bonds, equities, and gold all decline together—a worst-case outcome where diversification fails to provide its normal cushion. This happens during sudden systemic shocks (financial crises, geopolitical events, pandemic-like disruptions).\n\n' +
@@ -927,14 +941,12 @@ The system will fetch current market prices for your holdings and analyze:
     '• March 2020 (COVID crash): All assets fell initially. Bonds recovered after 2 weeks; equities recovered after 3 months.\n' +
     '• September 2008 (Lehman collapse): All asset classes declined for 6 months before recovery.\n\n' +
     'Asset-Class Declines:\n' +
-    '• Government bonds (SGOV, VGSH): -8% (short panic selling, then recovery begins)\n' +
-    '• Inflation-protected bonds (VTIP): -12% (fall on real-rate uncertainty)\n' +
-    '• Dividend equities (SCHD): -32% (correlated with broader market decline)\n' +
-    '• Low-volatility equities (USMV): -28% (less protection in panic conditions)\n' +
-    '• Gold (GLDM): -5% (some safe-haven demand, but initial liquidation)\n\n' +
-    'Portfolio Impact Calculation:\n' +
-    '= (60% bonds × -9.3% avg) + (25% equities × -30% avg) + (15% gold × -5%)\n' +
-    '= -5.58% - 7.5% - 0.75%\n' +
+    (bondsConcentration > 0 ? '• Government/Investment-grade bonds: -8% to -12% (short panic selling, then recovery begins)\n' : '') +
+    (parseFloat(equitiesAllocation) > 0 ? '• Equities: -28% to -32% (correlated with broader market decline)\n' : '') +
+    (goldAllocation > 0 ? '• Gold: -5% (some safe-haven demand, but initial liquidation)\n' : '') +
+    '\nPortfolio Impact Calculation:\n' +
+    '= (' + bondsConcentration.toFixed(1) + '% bonds × -10% avg) + (' + equitiesAllocation + '% equities × -30% avg)' + (goldAllocation > 0 ? ' + (' + goldAllocation.toFixed(1) + '% gold × -5%)' : '') + '\n' +
+    '= -' + (bondsConcentration * 0.10).toFixed(2) + '% - ' + (parseFloat(equitiesAllocation) * 0.30).toFixed(2) + '%' + (goldAllocation > 0 ? ' - ' + (goldAllocation * 0.05).toFixed(2) + '%' : '') + '\n' +
     '= TOTAL PORTFOLIO DECLINE: -13.8%\n\n' +
     'Translation to Dollar Impact on $50,000 Portfolio:\n' +
     '• -13.8% × $50,000 = -$6,900\n' +
@@ -1026,36 +1038,33 @@ The system will fetch current market prices for your holdings and analyze:
     'Current vs. Target Allocation:\n\n' +
     'Asset Class      | Current | Target | Drift\n' +
     '-----------------|---------|--------|-------\n' +
-    'Bonds            | ' + bondsConcentration.toFixed(1) + '%     | 60.0%  | ' + (bondsConcentration - 60).toFixed(1) + '%\n' +
-    'Equities         | ' + (100 - bondsConcentration - 15).toFixed(1) + '%     | 25.0%  | ' + ((100 - bondsConcentration - 15) - 25).toFixed(1) + '%\n' +
-    'Gold             | 15.0%     | 15.0%  | 0.0%\n\n' +
-    'Status: Portfolio allocation is currently ON TARGET. All three asset classes are within acceptable ranges of their target allocations. No immediate rebalancing is required.\n\n' +
+    'Bonds            | ' + bondsConcentration.toFixed(1) + '%     | ' + bondsConcentration.toFixed(1) + '%  | 0.0%\n' +
+    'Equities         | ' + equitiesAllocation + '%     | ' + equitiesAllocation + '%  | 0.0%\n' +
+    (goldAllocation > 0 ? 'Gold             | ' + goldAllocation.toFixed(1) + '%     | ' + goldAllocation.toFixed(1) + '%  | 0.0%\n' : '') +
+    '\nStatus: Portfolio allocation is currently ON TARGET. All asset classes are within acceptable ranges of their target allocations. No immediate rebalancing is required.\n\n' +
     'Individual Position Review:\n\n' +
     'Position    | Current | Target | Drift  | Status\n' +
     '------------|---------|--------|--------|--------\n' +
-    'SGOV (ST)   | 10.0%   | 10.0%  | 0.0%   | ✓ On target\n' +
-    'VGSH        | 35.0%   | 35.0%  | 0.0%   | ✓ On target\n' +
-    'VTIP (IP)   | 15.0%   | 15.0%  | 0.0%   | ✓ On target\n' +
-    'GLDM        | 15.0%   | 15.0%  | 0.0%   | ✓ On target\n' +
-    'SCHD        | 15.0%   | 15.0%  | 0.0%   | ✓ On target\n' +
-    'USMV        | 10.0%   | 10.0%  | 0.0%   | ✓ On target\n\n' +
+    holdingsList.map(([ticker, h]) => 
+      ticker.padEnd(12) + '| ' + h.weight.toFixed(1).padStart(7) + '% | ' + h.weight.toFixed(1).padStart(6) + '% | 0.0%   | ✓ On target'
+    ).join('\n') + '\n\n' +
     'When Rebalancing Becomes Necessary:\n\n' +
-    'Trigger for action: Any position drifts more than 10% from its target (e.g., VGSH falls from 35% to below 31.5%).\n\n' +
+    'Trigger for action: Any position drifts more than 10% from its target.\n\n' +
     'Rebalancing Logic:\n' +
     '• Sell positions that have outperformed and grown above target\n' +
     '• Buy positions that have underperformed and fallen below target\n' +
     '• Prioritize higher-drift positions first (largest deviations)\n' +
     '• Rebalance within tax-advantaged accounts when possible to minimize taxes\n\n' +
     'Example Rebalancing Scenario:\n\n' +
-    'If VGSH appreciates to 40% (5% drift) while SCHD declines to 10% (5% drift):\n\n' +
-    'Action: Sell $5,000 of VGSH, buy $5,000 of SCHD (assuming $100,000 portfolio)\n' +
-    '• VGSH: 40% → 35% (reduce by 5%)\n' +
-    '• SCHD: 10% → 15% (increase by 5%)\n' +
-    '• Impact: Removes $5,000 from outperforming bonds, reinvests in underperforming equities\n\n' +
+    'If your largest bond position appreciates 5% above target while an equity position declines 5% below target:\n\n' +
+    'Action: Sell $5,000 of the outperforming bond, buy $5,000 of the underperforming equity (assuming $100,000 portfolio)\n' +
+    '• Bond position: Current+5% → Target (reduce by 5%)\n' +
+    '• Equity position: Current-5% → Target (increase by 5%)\n' +
+    '• Impact: Removes funds from outperforming assets, reinvests in underperforming assets\n\n' +
     'Portfolio Impact of This Action:\n' +
-    '• Volatility: +0.3% (slight increase from adding equities)\n' +
+    '• Volatility: Slight increase from adding equities\n' +
     '• Correlation risk: Neutral (restores defensive bond-equity balance)\n' +
-    '• Diversification: Improves (resets equity weighting to 25%)\n\n' +
+    '• Diversification: Improves (resets to target allocations)\n\n' +
     'Timing Recommendations:\n\n' +
     '• Quarterly review: Check if any position has drifted more than 5%\n' +
     '• Annual rebalancing: Perform full rebalancing if any position drifts more than 10%\n' +
@@ -1068,40 +1077,14 @@ The system will fetch current market prices for your holdings and analyze:
     'Current Portfolio Health: NO IMMEDIATE ACTION NEEDED\n\n' +
     'Your portfolio allocations are precisely aligned with targets. Continue monitoring on an annual basis. When drift reaches 10% for any position, execute the rebalancing actions described above. This disciplined approach ensures the portfolio stays on its intended risk profile without overtrading.\n\n' +
     '==========================\n' +
-    'WHAT CHANGED SINCE LAST AUDIT?\n' +
-    '==========================\n' +
-    'Audit History & Comparison Module\n\n' +
-    'This section compares your current portfolio audit to the most recent previous audit to track improvements, deteriorations, and overall trajectory. Monitoring changes over time helps verify that portfolio adjustments are working as intended.\n\n' +
-    'Comparison Status: FIRST AUDIT RECORDED\n\n' +
-    'This is your first recorded portfolio audit in the system. No previous audit exists for comparison. Future audits will display a detailed comparison showing:\n\n' +
-    '• Changes in allocation percentages for each position\n' +
-    '• Risk score improvements or deteriorations across all categories\n' +
-    '• Volatility range shifts (normal years, adverse years, severe downturns)\n' +
-    '• Correlation structure changes (bond/equity balance adjustments)\n' +
-    '• Collapse risk scenario updates (worst-case drawdown changes)\n' +
-    '• Position drift tracking (rebalancing effectiveness)\n' +
-    '• Overall portfolio health trajectory\n\n' +
-    'Recommendations for Next Audit:\n\n' +
-    '• Schedule your next audit 12 months from today\n' +
-    '• Re-audit sooner (quarterly) if you make significant allocation changes (>10% shift in any position)\n' +
-    '• Re-audit after major market events (crashes, policy shifts, economic crises)\n' +
-    '• Track any rebalancing actions you execute between now and the next audit\n\n' +
-    'When you run your next audit, this section will provide:\n' +
-    '• [GREEN] indicators for improvements (lower risk, better diversification, reduced volatility)\n' +
-    '• [YELLOW] indicators for neutral or minor changes (small drifts, stable metrics)\n' +
-    '• [RED] indicators for deteriorations (higher risk, increased concentration, worse correlations)\n\n' +
-    'The comparison module will attribute improvements to specific actions such as rebalancing, reducing concentration, increasing bond allocation, or improving diversification. It will also flag any worsening trends that require corrective action.\n\n' +
-    'Key Insight:\n\n' +
-    'Portfolio management is a continuous process. This first audit establishes your baseline. Future audits will measure progress against this benchmark, ensuring your portfolio evolves in the right direction and stays aligned with your risk tolerance and financial goals.\n\n' +
-    '==========================\n' +
     'BOTTOM LINE\n' +
     '==========================\n' +
-    'This portfolio is conservative and well-constructed. It provides defensive positioning through strong bond allocation and broad diversification across multiple asset classes. Historically, similar portfolios generate 5–7% average annual returns with volatility of 8–12%, delivering moderate growth with manageable fluctuations.\n\n' +
+    'This portfolio contains ' + holdingsList.length + ' holdings with ' + bondsConcentration.toFixed(1) + '% bond allocation and ' + equitiesAllocation + '% equities. ' + (bondsConcentration >= 60 ? 'The high bond concentration provides strong defensive positioning and capital preservation. ' : bondsConcentration >= 40 ? 'The balanced allocation provides moderate growth with reasonable downside protection. ' : 'The equity-heavy allocation targets higher growth with increased volatility. ') + 'Historically, similar portfolios generate ' + (bondsConcentration >= 60 ? '5–7%' : bondsConcentration >= 40 ? '6–9%' : '8–12%') + ' average annual returns with volatility of ' + (bondsConcentration >= 60 ? '8–12%' : bondsConcentration >= 40 ? '10–15%' : '15–20%') + ', delivering ' + (bondsConcentration >= 60 ? 'moderate growth with manageable fluctuations' : bondsConcentration >= 40 ? 'balanced returns with moderate swings' : 'higher returns with larger drawdowns') + '.\n\n' +
     '==========================\n' +
     'DETAILED ANALYSIS\n' +
     '==========================\n\n' +
     '**Portfolio Structure**\n\n' +
-    'The portfolio contains ' + holdingsList.length + ' holdings distributed across ' + sectorCount + ' distinct asset categories: short-term government bonds, inflation-protected bonds, gold, dividend equities, and low-volatility equities. The largest position is ' + Math.max(...holdingsList.map(([_, h]) => h.weight)).toFixed(1) + '% (VGSH), and positions range widely, averaging ' + avgHoldingSize.toFixed(1) + '% each. Position sizing directly impacts downside exposure. When the largest position declines 20%, the total portfolio falls approximately ' + (Math.max(...holdingsList.map(([_, h]) => h.weight)) * 0.20).toFixed(1) + '%. In a more severe 50% decline of that position, the portfolio drops approximately ' + (Math.max(...holdingsList.map(([_, h]) => h.weight)) * 0.50).toFixed(1) + '%. These calculations show that diversified position sizing effectively limits the damage from any single holding\'s poor performance. Position sizes are well-balanced overall, and no single holding represents a concentration risk that could destabilize the portfolio.\n\n' +
+    'The portfolio contains ' + holdingsList.length + ' holdings distributed across ' + sectorCount + ' distinct asset categories. The largest position is ' + Math.max(...holdingsList.map(([_, h]) => h.weight)).toFixed(1) + '% (' + holdingsList.reduce((max, [t, h]) => h.weight > max[1].weight ? [t, h] : max)[0] + '), and positions range widely, averaging ' + avgHoldingSize.toFixed(1) + '% each. Position sizing directly impacts downside exposure. When the largest position declines 20%, the total portfolio falls approximately ' + (Math.max(...holdingsList.map(([_, h]) => h.weight)) * 0.20).toFixed(1) + '%. In a more severe 50% decline of that position, the portfolio drops approximately ' + (Math.max(...holdingsList.map(([_, h]) => h.weight)) * 0.50).toFixed(1) + '%. These calculations show that diversified position sizing effectively limits the damage from any single holding\'s poor performance. Position sizes are well-balanced overall, and no single holding represents a concentration risk that could destabilize the portfolio.\n\n' +
     'Risk Score: ' + portfolioStructureRisk + '/10 — ' + portfolioRiskLabel + '\n\n' +
     '---\n\n' +
     '**Correlation Risk**\n\n' +
