@@ -1130,7 +1130,7 @@ The system will fetch current market prices for your holdings and analyze:
   };
 };
 
-// Mock LLM response generator - handles ticker-based analysis
+// Mock LLM response generator - handles both ticker and portfolio analysis
 const getMockLLMResponse = (params: InvokeParams): InvokeResult => {
   // Extract stage number from messages if possible
   const userMessage = params.messages.find(m => m.role === "user");
@@ -1139,6 +1139,15 @@ const getMockLLMResponse = (params: InvokeParams): InvokeResult => {
   // Check if this is an audit request
   if (userContent.includes("financial collapse auditor") || userContent.includes("collapse risk")) {
     console.log("[LLM] Detected audit request, returning mock audit response with portfolio analysis");
+    return getMockAuditResponse(userContent);
+  }
+
+  // Check if this is portfolio analysis (multiple holdings with percentages)
+  const holdingsMatch = userContent.match(/Holdings?:\s*([A-Z\s,\d%]+)/i);
+  const hasMultipleHoldings = holdingsMatch && (holdingsMatch[1].split(',').length > 1 || holdingsMatch[1].includes('%'));
+  
+  if (hasMultipleHoldings) {
+    console.log("[LLM] Detected portfolio analysis with multiple holdings, returning portfolio-focused response");
     return getMockAuditResponse(userContent);
   }
 
