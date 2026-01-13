@@ -40,15 +40,15 @@ const PIPELINE_STAGES = [
 
 // System prompts for each pipeline stage
 const STAGE_PROMPTS = {
-  0: "You are a trading system reset analyst. Clear all previous biases and assumptions. Analyze the current market state with fresh perspective.",
-  1: "You are a coarse retrieval specialist. Retrieve relevant trading signals and market data from the knowledge base.",
-  2: "You are a re-ranking expert. Rank the retrieved signals by relevance and quality.",
-  3: "You are a narrative compression specialist. Compress the trading narrative into key insights.",
-  4: "You are a risk framing expert. Frame all risks in the trading decision.",
-  5: "You are an execution guidance specialist. Provide specific execution guidance for the trade. Include ticker symbol, entry price, target price, and stop loss level.",
-  6: "You are a portfolio scoring expert. Score the portfolio and individual positions. Provide specific ticker symbols and price targets.",
-  7: "You are a decision ritual specialist. Apply decision-making rituals to finalize the trading decision. Provide final BUY/SELL/HOLD decision with specific price targets.",
-  8: "You are a debrief specialist. Debrief the trading decision and extract lessons learned.",
+  0: "You are an analysis reset specialist. Clear all previous biases and assumptions. If analyzing a portfolio, focus on portfolio holdings. If analyzing a trade, focus on the ticker. Analyze with fresh perspective using the specific data provided.",
+  1: "You are a data retrieval specialist. If given portfolio holdings (multiple tickers with allocations), analyze each holding's current status. If given a single ticker for trading, retrieve relevant signals. Focus on the specific holdings or ticker provided in the input.",
+  2: "You are a prioritization expert. If analyzing a portfolio, rank holdings by importance and risk. If analyzing a trade, rank signals by quality. Base your ranking on the specific data provided.",
+  3: "You are a narrative specialist. If analyzing a portfolio, summarize how the holdings work together and align with stated goals. If analyzing a trade, compress the trading narrative. Use the specific holdings or ticker from the input.",
+  4: "You are a risk assessment expert. If analyzing a portfolio, evaluate concentration risk, volatility, and goal alignment based on the actual holdings provided. If analyzing a trade, frame the trade risk. Reference the specific holdings or ticker in your analysis.",
+  5: "You are an execution specialist. If analyzing a portfolio, recommend specific actions (rebalance, hold, adjust positions) based on the holdings provided. If analyzing a trade, provide entry/exit guidance. Include specific tickers and prices only if provided in the input.",
+  6: "You are a scoring specialist. If analyzing a portfolio with multiple holdings, score each position and overall portfolio health. If analyzing a single ticker trade, score the trade setup. Use the specific holdings or ticker from the input.",
+  7: "You are a decision specialist. If analyzing a portfolio, provide a clear recommendation (HOLD/REBALANCE/ADJUST) based on the actual holdings. If analyzing a trade, provide BUY/SELL/HOLD decision. Reference the specific holdings or ticker provided.",
+  8: "You are a debrief specialist. If analyzing a portfolio, extract lessons about asset allocation and goal alignment. If analyzing a trade, extract trading lessons. Summarize based on the specific holdings or ticker analyzed.",
 };
 
 interface AuditSection {
@@ -74,58 +74,67 @@ interface AuditResult {
 function extractTradingDecision(analysisText: string) {
   const decision = {
     decision: "HOLD",
-    symbol: "UNKNOWN",
-    entryPrice: "Market",
-    targetPrice: "0.00",
-    stopLoss: "0.00",
+    symbol: "PORTFOLIO",
+    entryPrice: "N/A",
+    targetPrice: "N/A",
+    stopLoss: "N/A",
     quantity: "0",
     rationale: analysisText,
   };
 
-  // 1. Extract Decision
-  // Matches: **TRADING DECISION: BUY**
-  const decisionMatch = analysisText.match(/\*\*TRADING DECISION:\*\*\s*(BUY|SELL|HOLD)/i);
+  // 1. Extract Decision - support both trading and portfolio decisions
+  // Matches: **TRADING DECISION: BUY** or **RECOMMENDATION: HOLD**
+  const decisionMatch = analysisText.match(/\*\*(TRADING DECISION|RECOMMENDATION|DECISION)[:\s\*]+(BUY|SELL|HOLD|REBALANCE|ADJUST|MONITOR)/i);
   if (decisionMatch) {
-    decision.decision = decisionMatch[1].toUpperCase();
+    decision.decision = decisionMatch[2].toUpperCase();
   } else {
     // Fallback for less structured text
-    if (analysisText.toLowerCase().includes("buy")) decision.decision = "BUY";
+    if (analysisText.toLowerCase().includes("rebalance")) decision.decision = "REBALANCE";
+    else if (analysisText.toLowerCase().includes("adjust")) decision.decision = "ADJUST";
+    else if (analysisText.toLowerCase().includes("buy")) decision.decision = "BUY";
     else if (analysisText.toLowerCase().includes("sell")) decision.decision = "SELL";
+    else if (analysisText.toLowerCase().includes("monitor")) decision.decision = "MONITOR";
   }
 
-  // 2. Extract Symbol
-  // Matches: **Symbol: NVDA** or **Symbol:** NVDA or Symbol: NVDA
-  const symbolMatch = analysisText.match(/\*\*Symbol[:\s\*]+([A-Z]{1,5})/i) ||
-                      analysisText.match(/Symbol[:\s]+([A-Z]{1,5})/i);
-  if (symbolMatch) {
-    decision.symbol = symbolMatch[1].toUpperCase();
+  // 2. Extract Symbol - check for portfolio holdings or single ticker
+  // First check if this is portfolio analysis (multiple holdings)
+  const portfolioMatch = analysisText.match(/Holdings?:\s*([A-Z\s,\d%]+)/i);
+  if (portfolioMatch) {
+    decision.symbol = "PORTFOLIO";
   } else {
-    // Fallback: look for generic word boundaries, but skip "FINAL" and other exclusions
-    const genericMatches = Array.from(analysisText.matchAll(/\b([A-Z]{2,5})\b/g));
-    for (const match of genericMatches) {
-      const candidate = match[1];
-      if (!["FINAL", "STAGE", "DECIS", "BUY", "SELL", "HOLD", "TODO", "NOTE", "MARKET", "ENTRY", "STOP", "RISK"].some(w => candidate.includes(w))) {
-        decision.symbol = candidate;
-        break;
+    // Single ticker analysis
+    const symbolMatch = analysisText.match(/\*\*Symbol[:\s\*]+([A-Z]{1,5})/i) ||
+                        analysisText.match(/Symbol[:\s]+([A-Z]{1,5})/i);
+    if (symbolMatch) {
+      decision.symbol = symbolMatch[1].toUpperCase();
+    } else {
+      // Fallback: look for generic word boundaries, but skip "FINAL" and other exclusions
+      const genericMatches = Array.from(analysisText.matchAll(/\b([A-Z]{2,5})\b/g));
+      for (const match of genericMatches) {
+        const candidate = match[1];
+        if (!["FINAL", "STAGE", "DECIS", "BUY", "SELL", "HOLD", "TODO", "NOTE", "MARKET", "ENTRY", "STOP", "RISK", "REBALANCE", "ADJUST", "MONITOR"].some(w => candidate.includes(w))) {
+          decision.symbol = candidate;
+          break;
+        }
       }
     }
   }
 
-  // 2.5 Extract Entry Price (Specific to new format)
+  // 2.5 Extract Entry Price (Specific to trading format)
   // Matches: **Entry Price: $145.20** or Entry Price: $145.20
   const entryMatch = analysisText.match(/\*\*Entry Price[:\s\*]+\$?([\d.]+)/i) ||
                      analysisText.match(/Entry Price[:\s]+\"?\$?([\d.]+)/i);
   if (entryMatch) decision.entryPrice = entryMatch[1];
 
 
-  // 3. Extract Target Price
+  // 3. Extract Target Price (for trading)
   // Matches table row: | Target 1 | $152.00 |
   // Or line: Target: $152.00 or Target 1: ...
   const targetMatch = analysisText.match(/\|\s*Target 1\s*\|\s*\$?([\d.]+)/i) || 
                       analysisText.match(/Target\s*\d*[:\s\*]+\"?\$?([\d.]+)/i);
   if (targetMatch) decision.targetPrice = targetMatch[1];
 
-  // 4. Extract Stop Loss
+  // 4. Extract Stop Loss (for trading)
   // Matches table row: | Stop Loss | $141.50 |
   // Or line: Stop Loss: $141.50
   const stopMatch = analysisText.match(/\|\s*Stop Loss\s*\|\s*\$?([\d.]+)/i) ||
