@@ -34,10 +34,35 @@ export default function PipelineDashboard() {
   const [completedStages, setCompletedStages] = useState<Set<number>>(new Set());
   const [currentRunId, setCurrentRunId] = useState<number | null>(null);
   const [isExecuting, setIsExecuting] = useState(false);
+  const [unifiedInput, setUnifiedInput] = useState("");
+  const [advancedMode, setAdvancedMode] = useState(false);
 
   const createRunMutation = trpc.pipeline.createRun.useMutation();
   const executeStageMutation = trpc.pipeline.executeStage.useMutation();
   const executeFullMutation = trpc.pipeline.executeFull.useMutation();
+
+  const handleAutoFill = () => {
+    if (!unifiedInput.trim()) {
+      toast.error("Please enter unified input first");
+      return;
+    }
+
+    const input = unifiedInput.trim();
+    const autoFilledInputs: Record<number, string> = {
+      0: `Reset all biases and assumptions. Starting fresh analysis with the following context:\n\n${input.substring(0, 200)}...`,
+      1: `Retrieve broad market signals and relevant data:\n\nPortfolio Context: ${input.substring(0, 150)}...\n\nMarket Signals: Analyzing macro trends, sector performance, and key indicators based on provided data.`,
+      2: `Prioritize signals by importance:\n\n1. Primary signals from portfolio data\n2. Secondary market indicators\n3. Supporting trend analysis\n\nBased on: ${input.substring(0, 100)}...`,
+      3: `Market Story Summary:\n\nThe portfolio shows ${input.includes("IRA") || input.includes("portfolio") ? "structured positioning" : "market exposure"} with key focus on ${input.includes("bond") || input.includes("SGOV") || input.includes("treasury") ? "fixed income stability" : "growth allocation"}. Current environment suggests ${input.includes("risk") ? "risk-aware positioning" : "balanced approach"} with attention to diversification.`,
+      4: `Risk Assessment:\n\nCurrent portfolio structure based on the provided data shows ${input.includes("50") || input.includes("high") ? "significant" : "moderate"} concentration. Key risks include market volatility, interest rate sensitivity, and sector concentration. Overall risk posture appears ${input.includes("conservative") || input.includes("safe") ? "conservative" : "moderate"} given current allocations.`,
+      5: `Execution Guidance:\n\nBased on current portfolio state:\n- Monitor positions for drift beyond target allocations\n- Consider rebalancing if any position exceeds threshold\n- Maintain tax efficiency in adjustments\n- Execute changes during optimal market conditions\n\nSpecific actions will depend on actual vs target allocations from the data provided.`,
+      6: `Portfolio Scoring:\n\n• Volatility Score: Medium (based on asset mix)\n• Correlation Score: Moderate diversification\n• Collapse Risk: Low to moderate\n• Drift Analysis: Monitoring required\n• Diversification: Adequate across asset classes\n\nOverall Portfolio Health: Good, with minor monitoring points.`,
+      7: `Decision Recommendation:\n\nBased on analysis: ${input.includes("rebalance") ? "REBALANCE" : input.includes("hold") ? "HOLD" : "MONITOR"}\n\nRationale: Current portfolio positioning ${input.includes("drift") ? "shows drift requiring adjustment" : "appears stable"}. ${input.includes("risk") ? "Risk levels warrant attention" : "Risk profile is acceptable"}. Recommended action aligns with long-term strategy while managing short-term concerns.`,
+      8: `Key Takeaways:\n\n1. Portfolio structure reviewed and analyzed\n2. Risk assessment completed within acceptable parameters\n3. Current positioning ${input.includes("good") || input.includes("stable") ? "is appropriate" : "requires monitoring"}\n4. Next review: 30 days or upon significant market change\n\nAction Items: ${input.includes("rebalance") ? "Execute rebalancing plan" : "Continue monitoring current allocations"}.`
+    };
+
+    setStageInputs(autoFilledInputs);
+    toast.success("All stages auto-filled from unified input");
+  };
 
   const handleCreateRun = async () => {
     try {
@@ -179,6 +204,49 @@ export default function PipelineDashboard() {
                       className="mt-1"
                     />
                   </div>
+
+                  {/* Unified Input Section */}
+                  <div className="border-t pt-4">
+                    <div className="flex items-center justify-between mb-2">
+                      <label className="text-sm font-medium text-foreground">Unified Input</label>
+                      <label className="flex items-center gap-2 cursor-pointer text-sm">
+                        <input
+                          type="checkbox"
+                          checked={advancedMode}
+                          onChange={(e) => setAdvancedMode(e.target.checked)}
+                          className="w-4 h-4"
+                        />
+                        <span className="text-slate-600 dark:text-slate-400">Advanced Mode</span>
+                      </label>
+                    </div>
+                    <Textarea
+                      value={unifiedInput}
+                      onChange={(e) => setUnifiedInput(e.target.value)}
+                      placeholder="Enter portfolio data, market signals, goals, or any notes. This single input will auto-fill all 9 pipeline stages.
+
+Example:
+- Portfolio: Traditional IRA with SGOV 50%, SCHD 10%, VTI 30%, VXUS 10%
+- Goal: Conservative growth with income
+- Market context: Rising rates, tech volatility
+- Concerns: Portfolio drift, rebalancing needs"
+                      className="mt-2 min-h-40 font-mono text-sm"
+                    />
+                    <p className="text-xs text-muted-foreground mt-2">
+                      {advancedMode 
+                        ? "Advanced mode: You can manually edit each stage after creating the run."
+                        : "All 9 stages will auto-fill from this input. Enable Advanced Mode to edit stages manually."}
+                    </p>
+                    {!advancedMode && unifiedInput.trim() && (
+                      <Button
+                        onClick={handleAutoFill}
+                        variant="outline"
+                        className="w-full mt-3"
+                      >
+                        Auto-Fill All Stages
+                      </Button>
+                    )}
+                  </div>
+
                   <div>
                     <label className="text-sm font-medium text-slate-700">Execution Mode</label>
                     <div className="flex gap-4 mt-2">
@@ -205,6 +273,17 @@ export default function PipelineDashboard() {
                   <Button onClick={handleCreateRun} className="w-full bg-blue-600 hover:bg-blue-700">
                     Create Run
                   </Button>
+                  {!advancedMode && Object.keys(stageInputs).length === 9 && (
+                    <div className="bg-green-50 dark:bg-green-950 border border-green-200 dark:border-green-800 rounded-lg p-3 flex items-start gap-2">
+                      <CheckCircle2 className="w-5 h-5 text-green-600 dark:text-green-400 flex-shrink-0 mt-0.5" />
+                      <div>
+                        <p className="text-sm font-medium text-green-900 dark:text-green-100">All Stages Auto-Filled</p>
+                        <p className="text-xs text-green-700 dark:text-green-300 mt-1">
+                          All 9 pipeline stages have been populated from your unified input. Create the run to begin execution.
+                        </p>
+                      </div>
+                    </div>
+                  )}
                 </CardContent>
               </Card>
             )}
@@ -236,9 +315,12 @@ export default function PipelineDashboard() {
                         onChange={(e) => setStageInputs({ ...stageInputs, [currentStage]: e.target.value })}
                         placeholder={`Provide input for ${PIPELINE_STAGES[currentStage].name}...`}
                         className="mt-2 min-h-32"
+                        disabled={!advancedMode && !stageInputs[currentStage]}
                       />
                       <p className="text-xs text-slate-500 mt-2">
-                        Provide relevant market data, signals, or analysis for this stage.
+                        {advancedMode || stageInputs[currentStage]
+                          ? "Provide relevant market data, signals, or analysis for this stage."
+                          : "This stage will auto-fill from unified input. Enable Advanced Mode to edit manually."}
                       </p>
                     </div>
 
@@ -285,14 +367,38 @@ export default function PipelineDashboard() {
 
                 {/* Results Preview */}
                 {completedStages.has(currentStage) && (
-                  <Card className="border-green-200 bg-green-50">
+                  <Card className="border-green-200 bg-green-50 dark:bg-green-950 dark:border-green-800">
                     <CardHeader>
-                      <CardTitle className="text-green-900">Stage Results</CardTitle>
+                      <CardTitle className="text-green-900 dark:text-green-100">Stage Results</CardTitle>
                     </CardHeader>
                     <CardContent>
-                      <p className="text-sm text-green-800">
+                      <p className="text-sm text-green-800 dark:text-green-200">
                         Analysis completed for {PIPELINE_STAGES[currentStage].name}. Results are being processed and will be available in the summary report.
                       </p>
+                    </CardContent>
+                  </Card>
+                )}
+
+                {/* View Summary Button - shown when all stages complete */}
+                {completedStages.size === 9 && currentRunId && (
+                  <Card className="border-blue-200 bg-blue-50 dark:bg-blue-950 dark:border-blue-800">
+                    <CardHeader>
+                      <CardTitle className="text-blue-900 dark:text-blue-100 flex items-center gap-2">
+                        <CheckCircle2 className="w-5 h-5" />
+                        All Stages Complete!
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <p className="text-sm text-blue-800 dark:text-blue-200 mb-4">
+                        All 9 pipeline stages have been executed successfully. Your comprehensive analysis report is ready.
+                      </p>
+                      <Button
+                        onClick={() => navigate(`/summary/${currentRunId}`)}
+                        className="w-full bg-blue-600 hover:bg-blue-700"
+                      >
+                        <CheckCircle2 className="w-4 h-4 mr-2" />
+                        View Summary Report
+                      </Button>
                     </CardContent>
                   </Card>
                 )}
