@@ -605,7 +605,7 @@ function parseAuditReport(report: string) {
   if (optimizationSection) {
     const optimizationText = optimizationSection[1].trim();
     if (optimizationText.length > 50) {
-      data.summary = optimizationText.substring(0, 400);
+      data.summary = optimizationText.substring(0, 1500);
     }
   }
 
