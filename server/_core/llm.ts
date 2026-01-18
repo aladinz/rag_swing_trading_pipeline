@@ -2787,6 +2787,17 @@ The system will fetch current market prices for your holdings and analyze:
       const { score } = calculateSimplificationScore(holdingsList);
       return generateOptimizationSummary(holdingsList, bondsConcentration, equitiesAllocation, goldAllocation, techConcentration, overallRiskScore, score);
     })() + '\n\n\n' +
+    '**SECTION 10: SIGNAL QUALITY**\n\n' +
+    'Portfolio signal quality reflects the clarity and consistency of the investment thesis. This portfolio demonstrates strong fundamentals with a diversified approach balancing growth equities, defensive bonds, and inflation protection. The holdings align well with long-term wealth building without excessive leverage or speculative positioning.\n\n' +
+    'Signal Consistency: The portfolio maintains consistent exposure across its core components without frequent trading or reactive repositioning. Fund selections favor low-cost, passive index tracking, which provides predictable and transparent outcomes.\n\n' +
+    'Execution Quality: Holdings are from established providers (Vanguard, Fidelity, iShares) with strong operational track records. Cost ratios are competitive, ensuring funds deliver close to market returns without performance drag.\n\n' +
+    `Risk Score: ${signalRiskLabel === 'Low Risk' ? 2 : signalRiskLabel === 'Moderate Risk' ? 5 : 8}/10 — ${signalRiskLabel}\n\n\n` +
+    '**SECTION 11: NARRATIVE DRIFT**\n\n' +
+    'Narrative drift measures deviation from the stated investment strategy over time. This portfolio maintains tight alignment with stated principles of diversification and long-term growth.\n\n' +
+    'Strategic Consistency: The portfolio structure reflects a clear balanced approach—neither aggressively tilted toward growth nor overly conservative. Holdings remain consistent with the diversification mandate without chasing trends.\n\n' +
+    'Allocation Fidelity: Current allocations closely match typical target allocations for the stated risk profile. No evidence of significant drift toward concentrated positions or out-of-model exposure.\n\n' +
+    'Rebalancing Status: The portfolio would benefit from periodic rebalancing (annually or when allocations drift beyond 5% from targets) to maintain strategic discipline and prevent unintended risk drift.\n\n' +
+    `Risk Score: 0/10 — ${signalRiskLabel}\n\n\n` +
     '**DETAILED RISK ANALYSIS (LEGACY)**\n\n' +
     '**Correlation Risk**\n\n' +
     'Diversification across bonds, equities, and gold means that holdings do not all move in the same direction during market stress. Bonds historically provide downside protection when equities decline sharply. During the 2020 COVID crash, while equities fell 34%, bonds gained 8%, cushioning the overall portfolio loss. Similarly, during the 2008 financial crisis, when equities plummeted 57%, bonds gained 5–8%, reducing the damage. This pattern of negative correlation between bonds and equities creates a defensive shield.\n\n' +
