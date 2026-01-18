@@ -805,9 +805,7 @@ ${tradingDecision.decision === "BUY" ? "Moderate risk with clearly defined stop 
           if (input.portfolioName) {
             console.log("[Auditor] Portfolio name provided:", input.portfolioName, "- adding comparison section");
             const comparisonSection = 
-              '==========================\n' +
-              'WHAT CHANGED SINCE LAST AUDIT?\n' +
-              '==========================\n' +
+              '**WHAT CHANGED SINCE LAST AUDIT?**\n\n' +
               'Audit History & Comparison Module\n\n' +
               'This section compares your current portfolio audit to the most recent previous audit to track improvements, deteriorations, and overall trajectory. Monitoring changes over time helps verify that portfolio adjustments are working as intended.\n\n' +
               'Comparison Status: FIRST AUDIT RECORDED\n\n' +
@@ -1052,7 +1050,7 @@ ${tradingDecision.decision === "BUY" ? "Moderate risk with clearly defined stop 
             JSON.stringify(auditData.signalQuality),
             JSON.stringify(auditData.narrativeDrift),
             String(auditData.overallRiskScore),
-            auditData.executiveSummary
+            finalAuditContent  // Store the full report text with "What Changed" section
           );
 
           console.log("[Auditor] Audit completed and saved");
@@ -1068,7 +1066,17 @@ ${tradingDecision.decision === "BUY" ? "Moderate risk with clearly defined stop 
     getReport: protectedProcedure
       .input(z.object({ runId: z.number() }))
       .query(async ({ input }) => {
-        return await getAuditorReport(input.runId);
+        const report = await getAuditorReport(input.runId);
+        if (!report) return null;
+        
+        // Return in format expected by dashboard
+        return {
+          id: report.id,
+          runId: report.runId,
+          report: report.recommendations || "", // This field contains the full report text
+          overallRisk: typeof report.overallRiskScore === 'string' ? parseFloat(report.overallRiskScore) : 5,
+          createdAt: report.createdAt
+        };
       }),
 
     // Get all portfolio profiles with timestamps

@@ -10,6 +10,7 @@ import PipelineDashboard from "./pages/PipelineDashboard";
 import CollapseAuditor from "./pages/CollapseAuditor";
 import PipelineSummary from "./pages/PipelineSummary";
 import DailyRitual from "./pages/DailyRitual";
+import PortfolioOptimizationDashboard from "./pages/PortfolioOptimizationDashboard";
 
 function Router() {
   return (
@@ -18,8 +19,10 @@ function Router() {
         <Route path={"/"} component={Home} />
         <Route path={"/pipeline"} component={PipelineDashboard} />
         <Route path={"/auditor"} component={CollapseAuditor} />
+        <Route path={"/collapse-auditor"} component={CollapseAuditor} />
         <Route path={"/daily-ritual"} component={DailyRitual} />
         <Route path={"/summary/:runId"} component={PipelineSummary} />
+        <Route path={"/portfolio-optimization/:runId"} component={PortfolioOptimizationDashboard} />
         <Route path={"/404"} component={NotFound} />
         {/* Final fallback route */}
         <Route component={NotFound} />

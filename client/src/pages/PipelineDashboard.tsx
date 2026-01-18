@@ -29,163 +29,22 @@ export default function PipelineDashboard() {
   const [, navigate] = useLocation();
   const [currentStage, setCurrentStage] = useState(0);
   const [runName, setRunName] = useState("Pipeline Run " + new Date().toLocaleDateString());
-  const [executionMode, setExecutionMode] = useState<"step_by_step" | "full_pipeline">("step_by_step");
+  const [executionMode, setExecutionMode] = useState<"step_by_step" | "full_pipeline" | "quick_analyze">("quick_analyze");
   const [stageInputs, setStageInputs] = useState<Record<number, string>>({});
   const [completedStages, setCompletedStages] = useState<Set<number>>(new Set());
   const [currentRunId, setCurrentRunId] = useState<number | null>(null);
+  const [executingStage, setExecutingStage] = useState<number | null>(null);
   const [isExecuting, setIsExecuting] = useState(false);
-  const [unifiedInput, setUnifiedInput] = useState("");
-  const [advancedMode, setAdvancedMode] = useState(false);
+  const [showHistory, setShowHistory] = useState(false);
+  const [quickTicker, setQuickTicker] = useState("");
+  const [quickContext, setQuickContext] = useState("");
 
   const createRunMutation = trpc.pipeline.createRun.useMutation();
   const executeStageMutation = trpc.pipeline.executeStage.useMutation();
   const executeFullMutation = trpc.pipeline.executeFull.useMutation();
-
-  const handleAutoFill = () => {
-    if (!unifiedInput.trim()) {
-      toast.error("Please enter unified input first");
-      return;
-    }
-
-    const input = unifiedInput.trim();
-    
-    // Parse holdings from unified input
-    const holdingsMatch = input.match(/Holdings?:\s*([^\n]+)/i);
-    const holdings = holdingsMatch ? holdingsMatch[1].trim() : "";
-    
-    // Parse market context
-    const marketMatch = input.match(/Market:\s*([^\n]+)/i);
-    const market = marketMatch ? marketMatch[1].trim() : "";
-    
-    // Parse goal
-    const goalMatch = input.match(/Goal:\s*([^\n]+)/i);
-    const goal = goalMatch ? goalMatch[1].trim() : "";
-    
-    // Parse portfolio name
-    const nameMatch = input.match(/Portfolio:\s*([^\n]+)/i);
-    const portfolioName = nameMatch ? nameMatch[1].trim() : "My Investments";
-
-    const autoFilledInputs: Record<number, string> = {
-      0: `Reset all biases and assumptions. Starting fresh analysis.
-
-Portfolio: ${portfolioName}
-Holdings: ${holdings}
-Market Context: ${market}
-Goal: ${goal}
-
-Clearing all previous assumptions and beginning objective analysis.`,
-
-      1: `Retrieve and analyze current portfolio data:
-
-**Portfolio Holdings:**
-${holdings}
-
-**Market Environment:**
-${market}
-
-**Investment Goal:**
-${goal}
-
-Analyze these holdings in the current market context.`,
-
-      2: `Rank and prioritize key factors:
-
-**Holdings to Evaluate:**
-${holdings}
-
-**Priority Analysis:**
-1. Current market conditions: ${market}
-2. Portfolio goal alignment: ${goal}
-3. Individual position strength
-4. Overall risk/reward balance
-
-Focus on most impactful factors affecting this specific portfolio.`,
-
-      3: `Summarize the market story for this portfolio:
-
-**Portfolio:** ${holdings}
-**Market:** ${market}
-**Goal:** ${goal}
-
-Provide a concise 3-5 sentence narrative explaining how current market conditions affect this specific portfolio and whether it aligns with stated goals.`,
-
-      4: `Assess portfolio risk:
-
-**Current Holdings:**
-${holdings}
-
-**Goal:**
-${goal}
-
-**Market Context:**
-${market}
-
-Evaluate concentration risk, volatility exposure, correlation, and overall risk level. Consider if risk profile matches stated investment goal.`,
-
-      5: `Provide execution guidance:
-
-**Portfolio:**
-${holdings}
-
-**Goal:**
-${goal}
-
-Recommend specific actions:
-- Should any positions be rebalanced?
-- Are allocations aligned with goals?
-- Any timing considerations given market conditions?
-- Tax-efficient execution suggestions`,
-
-      6: `Score this portfolio:
-
-**Holdings:**
-${holdings}
-
-**Goal:**
-${goal}
-
-Provide scores (1-10 scale):
-• Volatility: ___/10
-• Diversification: ___/10  
-• Goal Alignment: ___/10
-• Collapse Protection: ___/10
-• Overall Health: ___/10
-
-Explain each score based on actual holdings.`,
-
-      7: `Make a clear decision:
-
-**Portfolio:**
-${holdings}
-
-**Goal:**
-${goal}
-
-**Market:**
-${market}
-
-Recommend ONE action: HOLD / REBALANCE / ADJUST / MONITOR
-
-Provide clear rationale based on portfolio holdings, market conditions, and investment goals.`,
-
-      8: `Debrief and extract lessons:
-
-**Portfolio Reviewed:**
-${holdings}
-
-**Key Takeaways:**
-1. Current portfolio status
-2. Alignment with goal: ${goal}
-3. Market impact: ${market}
-4. Recommended next steps
-
-**Action Items:**
-List specific next steps for this portfolio.`
-    };
-
-    setStageInputs(autoFilledInputs);
-    toast.success("All stages auto-filled from unified input");
-  };
+  const { data: historicalRuns } = trpc.pipeline.getUserRuns.useQuery(undefined, {
+    enabled: showHistory,
+  });
 
   const handleCreateRun = async () => {
     try {
@@ -207,7 +66,12 @@ List specific next steps for this portfolio.`
       return;
     }
 
-    setIsExecuting(true);
+    if (!stageInputs[currentStage]?.trim()) {
+      toast.error(`Please provide input for ${PIPELINE_STAGES[currentStage].name}`);
+      return;
+    }
+
+    setExecutingStage(currentStage);
     try {
       const inputs = stageInputs[currentStage] || "No specific input provided";
       await executeStageMutation.mutateAsync({
@@ -221,11 +85,18 @@ List specific next steps for this portfolio.`
 
       if (currentStage < 8) {
         setCurrentStage(currentStage + 1);
+      } else {
+        // All stages complete, navigate to summary
+        setTimeout(() => {
+          navigate(`/summary/${currentRunId}`);
+        }, 1500);
       }
-    } catch (error) {
-      toast.error("Failed to execute stage");
+    } catch (error: any) {
+      const errorMsg = error?.message || "Failed to execute stage";
+      toast.error(errorMsg);
+      console.error("Stage execution error:", error);
     } finally {
-      setIsExecuting(false);
+      setExecutingStage(null);
     }
   };
 
@@ -256,12 +127,75 @@ List specific next steps for this portfolio.`
     }
   };
 
+  const handleQuickAnalyze = async () => {
+    const ticker = quickTicker.trim().toUpperCase();
+    if (!ticker) {
+      toast.error("Please enter a ticker symbol");
+      return;
+    }
+
+    // Validate ticker format (1-5 uppercase letters)
+    if (!/^[A-Z]{1,5}$/.test(ticker)) {
+      toast.error("Invalid ticker format. Use 1-5 letters (e.g., NVDA, AAPL)");
+      return;
+    }
+
+    try {
+      // Create the run
+      const result = await createRunMutation.mutateAsync({
+        runName: `${ticker} - Quick Analysis`,
+        executionMode: "full_pipeline",
+        metadata: { ticker, quickAnalyze: true, context: quickContext },
+      });
+      setCurrentRunId(result.runId);
+      
+      // Auto-generate stage inputs based on ticker
+      const context = quickContext ? ` (Context: ${quickContext})` : "";
+      const autoInputs: Record<number, string> = {
+        0: `Ticker: ${ticker}${context}\n\nReset all previous assumptions and biases. Analyze ${ticker} with a fresh perspective based on current market conditions.`,
+        1: `Ticker: ${ticker}${context}\n\nRetrieve recent price action, volume patterns, sector behavior, earnings data, and macro context relevant to ${ticker}.`,
+        2: `Ticker: ${ticker}${context}\n\nRank the most impactful signals for ${ticker}: earnings surprises, volume spikes, technical patterns, sector rotation, and market sentiment.`,
+        3: `Ticker: ${ticker}${context}\n\nCompress the current story of ${ticker} into 3-5 clear lines covering: trend, momentum, key levels, and immediate catalysts.`,
+        4: `Ticker: ${ticker}${context}\n\nFrame the risk profile of trading ${ticker}: volatility characteristics, correlation to broader markets, sector-specific risks, and collapse exposure.`,
+        5: `Ticker: ${ticker}${context}\n\nProvide execution guidance for ${ticker}: optimal entry zones, profit targets, stop loss levels, position sizing, and trade timeframe.`,
+        6: `Ticker: ${ticker}${context}\n\nScore ${ticker} across key dimensions: volatility (0-10), momentum (0-10), correlation (0-10), and overall risk (0-10).`,
+        7: `Ticker: ${ticker}${context}\n\nMake a clear trading decision for ${ticker}: Trade (BUY/SELL), Wait for better setup, or Avoid. Provide specific reasoning.`,
+      };
+      
+      setStageInputs(autoInputs);
+      toast.success(`Auto-generated analysis for ${ticker}`);
+      
+      // Execute full pipeline
+      setIsExecuting(true);
+      await executeFullMutation.mutateAsync({
+        runId: result.runId,
+        inputs: { ticker, quickAnalyze: true, context: quickContext, stageInputs: autoInputs },
+      });
+
+      setCompletedStages(new Set([0, 1, 2, 3, 4, 5, 6, 7, 8]));
+      toast.success(`${ticker} analysis complete!`);
+      
+      // Navigate to summary
+      setTimeout(() => {
+        navigate(`/summary/${result.runId}`);
+      }, 1500);
+    } catch (error: any) {
+      const errorMsg = error?.message || "Analysis failed";
+      toast.error(errorMsg);
+      console.error("Quick analyze error:", error);
+    } finally {
+      setIsExecuting(false);
+    }
+  };
+
   const handleReset = () => {
     setCurrentStage(0);
     setCompletedStages(new Set());
     setStageInputs({});
     setCurrentRunId(null);
     setRunName("Pipeline Run " + new Date().toLocaleDateString());
+    setQuickTicker("");
+    setQuickContext("");
     toast.info("Pipeline reset");
   };
 
@@ -328,51 +262,21 @@ List specific next steps for this portfolio.`
                     />
                   </div>
 
-                  {/* Unified Input Section */}
-                  <div className="border-t pt-4">
-                    <div className="flex items-center justify-between mb-2">
-                      <label className="text-sm font-medium text-foreground">Unified Input</label>
-                      <label className="flex items-center gap-2 cursor-pointer text-sm">
+                  <div>
+                    <label className="text-sm font-medium text-slate-700 dark:text-slate-300">Execution Mode</label>
+                    <div className="flex flex-col gap-3 mt-2">
+                      <label className="flex items-center gap-2 cursor-pointer">
                         <input
-                          type="checkbox"
-                          checked={advancedMode}
-                          onChange={(e) => setAdvancedMode(e.target.checked)}
+                          type="radio"
+                          checked={executionMode === "quick_analyze"}
+                          onChange={() => setExecutionMode("quick_analyze")}
                           className="w-4 h-4"
                         />
-                        <span className="text-slate-600 dark:text-slate-400">Advanced Mode</span>
+                        <div className="flex flex-col">
+                          <span className="text-sm font-medium">Quick Analyze (Recommended)</span>
+                          <span className="text-xs text-slate-500 dark:text-slate-400">Just enter a ticker - we'll auto-generate all 8 stages</span>
+                        </div>
                       </label>
-                    </div>
-                    <Textarea
-                      value={unifiedInput}
-                      onChange={(e) => setUnifiedInput(e.target.value)}
-                      placeholder="Enter portfolio data, market signals, goals, or any notes. This single input will auto-fill all 9 pipeline stages.
-
-Format (use this structure for best results):
-Portfolio: My Investments
-Holdings: SGOV 50%, SCHD 10%, VTI 30%, VXUS 10%
-Market: CPI cooling, VIX low, tech leading
-Goal: Defensive, low volatility, collapse protection"
-                      className="mt-2 min-h-40 font-mono text-sm"
-                    />
-                    <p className="text-xs text-muted-foreground mt-2">
-                      {advancedMode 
-                        ? "Advanced mode: You can manually edit each stage after creating the run."
-                        : "All 9 stages will auto-fill from this input. Enable Advanced Mode to edit stages manually."}
-                    </p>
-                    {!advancedMode && unifiedInput.trim() && (
-                      <Button
-                        onClick={handleAutoFill}
-                        variant="outline"
-                        className="w-full mt-3"
-                      >
-                        Auto-Fill All Stages
-                      </Button>
-                    )}
-                  </div>
-
-                  <div>
-                    <label className="text-sm font-medium text-slate-700">Execution Mode</label>
-                    <div className="flex gap-4 mt-2">
                       <label className="flex items-center gap-2 cursor-pointer">
                         <input
                           type="radio"
@@ -380,7 +284,10 @@ Goal: Defensive, low volatility, collapse protection"
                           onChange={() => setExecutionMode("step_by_step")}
                           className="w-4 h-4"
                         />
-                        <span className="text-sm">Step by Step</span>
+                        <div className="flex flex-col">
+                          <span className="text-sm font-medium">Step by Step</span>
+                          <span className="text-xs text-slate-500 dark:text-slate-400">Manual input for each stage</span>
+                        </div>
                       </label>
                       <label className="flex items-center gap-2 cursor-pointer">
                         <input
@@ -389,23 +296,66 @@ Goal: Defensive, low volatility, collapse protection"
                           onChange={() => setExecutionMode("full_pipeline")}
                           className="w-4 h-4"
                         />
-                        <span className="text-sm">Full Pipeline</span>
+                        <div className="flex flex-col">
+                          <span className="text-sm font-medium">Full Pipeline</span>
+                          <span className="text-xs text-slate-500 dark:text-slate-400">Run all stages with your inputs</span>
+                        </div>
                       </label>
                     </div>
                   </div>
-                  <Button onClick={handleCreateRun} className="w-full bg-blue-600 hover:bg-blue-700">
-                    Create Run
-                  </Button>
-                  {!advancedMode && Object.keys(stageInputs).length === 9 && (
-                    <div className="bg-green-50 dark:bg-green-950 border border-green-200 dark:border-green-800 rounded-lg p-3 flex items-start gap-2">
-                      <CheckCircle2 className="w-5 h-5 text-green-600 dark:text-green-400 flex-shrink-0 mt-0.5" />
+
+                  {executionMode === "quick_analyze" && (
+                    <div className="space-y-4 p-4 bg-blue-50 dark:bg-blue-950 rounded-lg border border-blue-200 dark:border-blue-800">
                       <div>
-                        <p className="text-sm font-medium text-green-900 dark:text-green-100">All Stages Auto-Filled</p>
-                        <p className="text-xs text-green-700 dark:text-green-300 mt-1">
-                          All 9 pipeline stages have been populated from your unified input. Create the run to begin execution.
+                        <label className="text-sm font-medium text-slate-700 dark:text-slate-300">Ticker Symbol *</label>
+                        <Input
+                          value={quickTicker}
+                          onChange={(e) => setQuickTicker(e.target.value.toUpperCase())}
+                          placeholder="e.g., NVDA, AAPL, TSLA"
+                          className="mt-1 font-mono text-lg"
+                          maxLength={5}
+                        />
+                        <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
+                          Enter any valid ticker symbol. We'll analyze it automatically.
                         </p>
                       </div>
+                      <div>
+                        <label className="text-sm font-medium text-slate-700 dark:text-slate-300">Context (Optional)</label>
+                        <Input
+                          value={quickContext}
+                          onChange={(e) => setQuickContext(e.target.value)}
+                          placeholder="e.g., 1-week swing, earnings play, breakout setup"
+                          className="mt-1"
+                        />
+                        <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
+                          Add specific context or timeframe if desired.
+                        </p>
+                      </div>
+                      <Button
+                        onClick={handleQuickAnalyze}
+                        disabled={!quickTicker.trim() || isExecuting}
+                        className="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700"
+                        size="lg"
+                      >
+                        {isExecuting ? (
+                          <>
+                            <Loader2 className="w-5 h-5 mr-2 animate-spin" />
+                            Analyzing {quickTicker}...
+                          </>
+                        ) : (
+                          <>
+                            <Play className="w-5 h-5 mr-2" />
+                            Analyze {quickTicker || "Ticker"}
+                          </>
+                        )}
+                      </Button>
                     </div>
+                  )}
+
+                  {executionMode !== "quick_analyze" && (
+                    <Button onClick={handleCreateRun} className="w-full bg-blue-600 hover:bg-blue-700">
+                      Create Run
+                    </Button>
                   )}
                 </CardContent>
               </Card>
@@ -432,28 +382,25 @@ Goal: Defensive, low volatility, collapse protection"
                   </CardHeader>
                   <CardContent className="space-y-4">
                     <div>
-                      <label className="text-sm font-medium text-slate-700">Analysis Input</label>
+                      <label className="text-sm font-medium text-slate-700 dark:text-slate-300">Analysis Input</label>
                       <Textarea
                         value={stageInputs[currentStage] || ""}
                         onChange={(e) => setStageInputs({ ...stageInputs, [currentStage]: e.target.value })}
                         placeholder={`Provide input for ${PIPELINE_STAGES[currentStage].name}...`}
                         className="mt-2 min-h-32"
-                        disabled={!advancedMode && !stageInputs[currentStage]}
                       />
-                      <p className="text-xs text-slate-500 mt-2">
-                        {advancedMode || stageInputs[currentStage]
-                          ? "Provide relevant market data, signals, or analysis for this stage."
-                          : "This stage will auto-fill from unified input. Enable Advanced Mode to edit manually."}
+                      <p className="text-xs text-slate-500 dark:text-slate-400 mt-2">
+                        Provide relevant market data, signals, or analysis for this stage.
                       </p>
                     </div>
 
-                    <div className="flex gap-3">
+                    <div className="flex gap-2">
                       <Button
                         onClick={handleExecuteStage}
-                        disabled={isExecuting}
-                        className="flex-1 bg-blue-600 hover:bg-blue-700"
+                        disabled={!stageInputs[currentStage] || executingStage === currentStage}
+                        className="flex-1"
                       >
-                        {isExecuting ? (
+                        {executingStage === currentStage ? (
                           <>
                             <Loader2 className="w-4 h-4 mr-2 animate-spin" />
                             Analyzing...
@@ -553,6 +500,63 @@ Goal: Defensive, low volatility, collapse protection"
                 </div>
               </>
             )}
+
+            {/* Historical Runs */}
+            <Card>
+              <CardHeader>
+                <div className="flex items-center justify-between">
+                  <CardTitle>Recent Pipeline Runs</CardTitle>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setShowHistory(!showHistory)}
+                  >
+                    {showHistory ? "Hide History" : "Show History"}
+                  </Button>
+                </div>
+              </CardHeader>
+              {showHistory && historicalRuns && historicalRuns.length > 0 && (
+                <CardContent>
+                  <div className="space-y-2">
+                    {historicalRuns.slice(0, 10).map((run: any) => (
+                      <div
+                        key={run.id}
+                        className="flex items-center justify-between p-3 rounded-lg bg-slate-50 dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 cursor-pointer transition-colors"
+                        onClick={() => navigate(`/summary/${run.id}`)}
+                      >
+                        <div className="flex-1">
+                          <p className="font-medium text-sm">{run.runName}</p>
+                          <p className="text-xs text-slate-500 dark:text-slate-400">
+                            {new Date(run.createdAt).toLocaleString()}
+                          </p>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <span className={`px-2 py-1 rounded text-xs font-medium ${
+                            run.status === "completed" 
+                              ? "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200" 
+                              : run.status === "in_progress"
+                              ? "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200"
+                              : "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200"
+                          }`}>
+                            {run.status}
+                          </span>
+                          <span className="text-xs text-slate-500">
+                            {run.currentStage}/9 stages
+                          </span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </CardContent>
+              )}
+              {showHistory && (!historicalRuns || historicalRuns.length === 0) && (
+                <CardContent>
+                  <p className="text-sm text-slate-500 dark:text-slate-400 text-center py-4">
+                    No historical runs found. Create your first pipeline run to see history here.
+                  </p>
+                </CardContent>
+              )}
+            </Card>
           </div>
         </div>
     </PageLayout>

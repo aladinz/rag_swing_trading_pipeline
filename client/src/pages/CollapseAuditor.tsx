@@ -183,6 +183,8 @@ export default function CollapseAuditor() {
       });
 
       setAnalysisResult(result);
+      // Store runId globally for dashboard navigation
+      (window as any).__lastAuditRunId = runResult.runId;
       toast.success("Audit analysis completed");
     } catch (error) {
       toast.error("Failed to run audit analysis");
@@ -542,6 +544,20 @@ BND 15%`}
 
             {/* Action Buttons */}
             <div className="flex gap-3 pt-6">
+              <Button
+                onClick={() => {
+                  const runId = (window as any).__lastAuditRunId;
+                  if (runId) {
+                    navigate(`/portfolio-optimization/${runId}`);
+                  } else {
+                    toast.error("No audit run ID found");
+                  }
+                }}
+                className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700"
+              >
+                <TrendingDown className="mr-2 h-4 w-4" />
+                View Optimization Dashboard
+              </Button>
               <Button
                 onClick={() => {
                   setAnalysisResult(null);
