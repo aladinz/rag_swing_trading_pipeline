@@ -463,11 +463,7 @@ BND 15%`}
               </CardHeader>
               <CardContent className="space-y-3">
                 {[
-                  { title: "Portfolio Structure", icon: "📊", desc: "Composition & diversification" },
                   { title: "Correlation Risk", icon: "🔗", desc: "Holdings relationships" },
-                  { title: "Volatility Exposure", icon: "📈", desc: "Risk metrics" },
-                  { title: "Signal Quality", icon: "✓", desc: "Trading signal assessment" },
-                  { title: "Narrative Drift", icon: "🎯", desc: "Strategy consistency" },
                 ].map((item) => (
                   <div key={item.title} className="p-3 bg-slate-100 rounded-lg">
                     <div className="flex items-start gap-2">
@@ -526,20 +522,8 @@ BND 15%`}
             <div className="space-y-6">
               <h2 className="text-2xl font-bold text-slate-900">Detailed Analysis</h2>
               
-              {/* Portfolio Structure */}
-              {analysisResult.portfolioStructure && <AuditSectionCard section={analysisResult.portfolioStructure} />}
-              
               {/* Correlation Risk */}
               {analysisResult.correlationRisk && <AuditSectionCard section={analysisResult.correlationRisk} />}
-              
-              {/* Volatility Exposure */}
-              {analysisResult.volatilityExposure && <AuditSectionCard section={analysisResult.volatilityExposure} />}
-              
-              {/* Signal Quality */}
-              {analysisResult.signalQuality && <AuditSectionCard section={analysisResult.signalQuality} />}
-              
-              {/* Narrative Drift */}
-              {analysisResult.narrativeDrift && <AuditSectionCard section={analysisResult.narrativeDrift} />}
             </div>
 
             {/* Action Buttons */}
