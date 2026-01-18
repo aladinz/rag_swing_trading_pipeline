@@ -7,11 +7,9 @@
   },
   "framework": "vite",
   "functions": {
-    "server/_core/index.ts": {
-      "runtime": "nodejs20.x",
-      "memory": 1024,
+    "api/index.ts": {
+      "runtime": "nodejs@20.x",
       "maxDuration": 60
     }
-  },
-  "public": false
+  }
 }
