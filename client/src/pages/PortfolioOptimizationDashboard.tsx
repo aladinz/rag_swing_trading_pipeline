@@ -16,8 +16,17 @@ import {
   RefreshCw,
   FileText,
   Calendar,
-  Layers
+  Layers,
+  Activity,
+  Link2,
+  AlertOctagon,
+  Globe
 } from "lucide-react";
+import {
+  HoverCard,
+  HoverCardContent,
+  HoverCardTrigger,
+} from "@/components/ui/hover-card";
 
 interface PortfolioSnapshot {
   name: string;
@@ -192,23 +201,27 @@ export default function PortfolioOptimizationDashboard() {
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
               <RiskScore 
                 label="Volatility" 
+                icon={Activity}
                 score={dashboardData.riskScores.volatility} 
-                description="Price fluctuation intensity"
+                explanation="How much prices swing — higher means more dramatic ups and downs."
               />
               <RiskScore 
                 label="Correlation" 
+                icon={Link2}
                 score={dashboardData.riskScores.correlation} 
-                description="Holdings move together"
+                explanation="How closely your holdings move together — higher means less diversification."
               />
               <RiskScore 
                 label="Collapse Risk" 
+                icon={AlertOctagon}
                 score={dashboardData.riskScores.collapse} 
-                description="Severe downturn exposure"
+                explanation="How exposed the portfolio is to severe downturns."
               />
               <RiskScore 
                 label="Diversification" 
+                icon={Globe}
                 score={dashboardData.riskScores.diversification} 
-                description="Spread across assets"
+                explanation="How spread out your investments are across different assets."
                 inverse
               />
             </div>
@@ -449,13 +462,15 @@ export default function PortfolioOptimizationDashboard() {
 // Risk Score Component
 function RiskScore({ 
   label, 
+  icon: Icon,
   score, 
-  description, 
+  explanation, 
   inverse = false 
 }: { 
-  label: string; 
+  label: string;
+  icon: React.ComponentType<{ className: string }>;
   score: number; 
-  description: string; 
+  explanation: string; 
   inverse?: boolean;
 }) {
   const getColor = (value: number) => {
@@ -472,10 +487,21 @@ function RiskScore({
   };
 
   return (
-    <div className="space-y-1">
-      <p className="text-sm text-muted-foreground">{label}</p>
-      <p className={`text-3xl font-bold ${getColor(score)}`}>{score.toFixed(1)}</p>
-      <p className="text-xs text-muted-foreground">{description}</p>
+    <div className="space-y-2">
+      <div className="flex items-center gap-2">
+        <HoverCard>
+          <HoverCardTrigger asChild>
+            <button className="flex items-center gap-2 hover:opacity-70 transition-opacity cursor-help">
+              <Icon className={`h-5 w-5 ${getColor(score)}`} />
+              <p className="text-sm font-medium text-foreground">{label}</p>
+            </button>
+          </HoverCardTrigger>
+          <HoverCardContent className="w-48 text-sm">
+            <p className="text-muted-foreground">{explanation}</p>
+          </HoverCardContent>
+        </HoverCard>
+      </div>
+      <p className={`text-3xl font-bold ${getColor(score)} pl-7`}>{score.toFixed(1)}</p>
     </div>
   );
 }
