@@ -2,7 +2,6 @@
   "buildCommand": "npm run build",
   "outputDirectory": "dist/public",
   "framework": "other",
-  "nodejs": "20",
   "env": {
     "SKIP_VITE_SETUP": "true"
   },
