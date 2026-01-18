@@ -645,11 +645,11 @@ const detectRedundancy = (holdingsList: [string, { weight: number; sector?: stri
   const portfolioTickers = holdingsList.map(([ticker]) => ticker.toUpperCase());
   
   // 1. Index-level redundancy (broad-market funds)
-  const broadMarketFunds = holdingsList.filter(([t]) => 
+  const totalMarketFunds = holdingsList.filter(([t]) => 
     ['FZROX', 'VTI', 'VTSAX', 'ITOT'].some(b => t.toUpperCase() === b)
   );
-  if (broadMarketFunds.length >= 2) {
-    const fundsList = broadMarketFunds.map(([t, h]) => `${t} (${h.weight.toFixed(1)}%)`).join(', ');
+  if (totalMarketFunds.length >= 2) {
+    const fundsList = totalMarketFunds.map(([t, h]) => `${t} (${h.weight.toFixed(1)}%)`).join(', ');
     detected.push(`• Total U.S. market overlap: ${fundsList} all track the same 4,000+ U.S. stocks with 99% correlation. Holding multiple funds provides no diversification benefit—consolidate into one to simplify without losing exposure.`);
   }
   
@@ -673,7 +673,7 @@ const detectRedundancy = (holdingsList: [string, { weight: number; sector?: stri
   
   // 2. Bond redundancy (aggregate bond funds)
   const aggregateBonds = holdingsList.filter(([t]) => 
-    ['BND', 'AGG', 'FBND', 'VBMFX'].some(b => t.toUpperCase().includes(b))
+    ['BND', 'AGG', 'FBND', 'VBMFX'].some(b => t.toUpperCase() === b)
   );
   const globalBonds = holdingsList.filter(([t]) => 
     ['BNDW', 'BNDX'].some(b => t.toUpperCase() === b)
@@ -684,15 +684,17 @@ const detectRedundancy = (holdingsList: [string, { weight: number; sector?: stri
     detected.push(`• Bond fund overlap: ${fundsList} all track the U.S. investment-grade bond market with 90%+ overlap. A single aggregate bond fund provides the same diversification—choose one and consolidate.`);
   }
   
+  // Only flag if you have BOTH US aggregate bonds AND global bonds (true category mismatch)
   if (aggregateBonds.length >= 1 && globalBonds.length >= 1) {
     const usBonds = aggregateBonds.map(([t, h]) => `${t} (${h.weight.toFixed(1)}%)`).join(', ');
     const gBonds = globalBonds.map(([t, h]) => `${t} (${h.weight.toFixed(1)}%)`).join(', ');
-    detected.push(`• Bond market overlap: ${usBonds} and ${gBonds} share substantial U.S. bond exposure. BNDW includes all of BND/AGG/FBND plus international bonds—holding both creates 60-70% redundancy in U.S. bonds.`);
+    const portfolioUsBondTickers = aggregateBonds.map(([t]) => t).join('/');
+    detected.push(`• Bond market overlap: ${usBonds} and ${gBonds} share substantial U.S. bond exposure. Global bonds include ${portfolioUsBondTickers} plus international—holding both creates 60-70% redundancy.`);
   }
   
   // 3. International equity redundancy
   const intlBroadFunds = holdingsList.filter(([t]) => 
-    ['VXUS', 'VEU', 'VTIAX', 'IXUS', 'VGTSX'].some(i => t.toUpperCase().includes(i))
+    ['VXUS', 'VEU', 'VTIAX', 'IXUS', 'VGTSX'].some(i => t.toUpperCase() === i)
   );
   if (intlBroadFunds.length >= 2) {
     const fundsList = intlBroadFunds.map(([t, h]) => `${t} (${h.weight.toFixed(1)}%)`).join(', ');
@@ -768,22 +770,23 @@ const detectRedundancy = (holdingsList: [string, { weight: number; sector?: stri
   }
   
   // 8. Hidden redundancy: Broad market funds + sector ETFs
-  const hasBroadMarket = holdingsList.some(([t]) => 
+  const broadMarketFunds = holdingsList.filter(([t]) => 
     ['FZROX', 'VTI', 'VTSAX', 'ITOT', 'VOO', 'SPY', 'IVV'].some(b => t.toUpperCase() === b)
   );
   const sectorETFs = holdingsList.filter(([t]) => 
     ['XLK', 'XLV', 'XLF', 'XLE', 'XLU', 'XLY', 'XLP', 'XLI', 'XLB', 'XLRE', 'XLC'].some(s => t.toUpperCase() === s)
   );
   
-  if (hasBroadMarket && sectorETFs.length >= 3) {
+  if (broadMarketFunds.length > 0 && sectorETFs.length >= 3) {
+    const broadMarketList = broadMarketFunds.map(([t]) => t).join('/');
     const sectorList = sectorETFs.map(([t, h]) => `${t} (${h.weight.toFixed(1)}%)`).join(', ');
     const totalSectorWeight = sectorETFs.reduce((s, [_, h]) => s + h.weight, 0);
-    detected.push(`• Hidden overlap: Portfolio holds broad market funds (VTI/VOO/FZROX) plus ${sectorETFs.length} sector ETFs (${sectorList}, ${totalSectorWeight.toFixed(0)}% combined). Broad market funds already contain all sectors—adding sector ETFs creates double-counting in those sectors.`);
+    detected.push(`• Hidden overlap: Portfolio holds broad market funds (${broadMarketList}) plus ${sectorETFs.length} sector ETFs (${sectorList}, ${totalSectorWeight.toFixed(0)}% combined). Broad market funds already contain all sectors—adding sector ETFs creates double-counting in those sectors.`);
   }
   
   // 9. Treasury/short-term bond redundancy
   const treasuryFunds = holdingsList.filter(([t]) => 
-    ['SGOV', 'VGSH', 'SHY', 'SHV', 'BIL'].some(tr => t.toUpperCase().includes(tr))
+    ['SGOV', 'VGSH', 'SHY', 'SHV', 'BIL'].some(tr => t.toUpperCase() === tr)
   );
   if (treasuryFunds.length >= 2) {
     const fundsList = treasuryFunds.map(([t, h]) => `${t} (${h.weight.toFixed(1)}%)`).join(', ');
