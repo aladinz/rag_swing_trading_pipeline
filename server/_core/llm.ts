@@ -1001,22 +1001,22 @@ const generatePortfolioStructure = (
   
   // Categorize holdings by type
   const broadMarketFunds = holdingsList.filter(([t]) => 
-    ['FZROX', 'VTI', 'VTSAX', 'ITOT', 'VOO', 'SPY', 'IVV', 'SPLG', 'SCHB'].some(b => t.toUpperCase().includes(b))
+    ['FZROX', 'VTI', 'VTSAX', 'ITOT', 'VOO', 'SPY', 'IVV', 'SPLG', 'SCHB'].some(b => t.toUpperCase() === b)
   );
   const internationalFunds = holdingsList.filter(([t]) => 
-    ['VXUS', 'VTIAX', 'VEU', 'IXUS', 'VGTSX', 'VFWAX'].some(i => t.toUpperCase().includes(i))
+    ['VXUS', 'VTIAX', 'VEU', 'IXUS', 'VGTSX', 'VFWAX'].some(i => t.toUpperCase() === i)
   );
   const dividendFunds = holdingsList.filter(([t]) => 
-    ['SCHD', 'VYM', 'VYMI', 'VIG', 'DVY', 'SDY', 'DGRO'].some(d => t.toUpperCase().includes(d))
+    ['SCHD', 'VYM', 'VYMI', 'VIG', 'DVY', 'SDY', 'DGRO'].some(d => t.toUpperCase() === d)
   );
   const qualityFunds = holdingsList.filter(([t]) => 
-    ['QUAL', 'USMV', 'SPLV', 'MTUM', 'JQUA'].some(q => t.toUpperCase().includes(q))
+    ['QUAL', 'USMV', 'SPLV', 'MTUM', 'JQUA'].some(q => t.toUpperCase() === q)
   );
   const sectorETFs = holdingsList.filter(([t]) => 
     ['XLK', 'XLV', 'XLF', 'XLE', 'XLU', 'XLY', 'XLP', 'XLI', 'XLB', 'XLRE', 'XLC', 'SMH', 'VRT'].some(s => t.toUpperCase() === s)
   );
   const bondFunds = holdingsList.filter(([t]) => 
-    ['BND', 'AGG', 'FBND', 'BNDW', 'VBTLX', 'VBMFX', 'TLT', 'IEF', 'SHY', 'VTIP', 'SGOV', 'VGSH'].some(b => t.toUpperCase().includes(b))
+    ['BND', 'AGG', 'FBND', 'BNDW', 'VBTLX', 'VBMFX', 'TLT', 'IEF', 'SHY', 'VTIP', 'SGOV', 'VGSH'].some(b => t.toUpperCase() === b)
   );
   const individualStocks = holdingsList.filter(([t]) => {
     const upper = t.toUpperCase();
@@ -1235,22 +1235,22 @@ const generateVolatilityExposure = (
   
   // Categorize holdings by volatility profile
   const broadMarketFunds = holdingsList.filter(([t]) => 
-    ['FZROX', 'VTI', 'VTSAX', 'ITOT', 'VOO', 'SPY', 'IVV', 'SPLG', 'SCHB'].some(b => t.toUpperCase().includes(b))
+    ['FZROX', 'VTI', 'VTSAX', 'ITOT', 'VOO', 'SPY', 'IVV', 'SPLG', 'SCHB'].some(b => t.toUpperCase() === b)
   );
   const internationalFunds = holdingsList.filter(([t]) => 
-    ['VXUS', 'VTIAX', 'VEU', 'IXUS', 'VGTSX', 'VFWAX'].some(i => t.toUpperCase().includes(i))
+    ['VXUS', 'VTIAX', 'VEU', 'IXUS', 'VGTSX', 'VFWAX'].some(i => t.toUpperCase() === i)
   );
   const dividendFunds = holdingsList.filter(([t]) => 
-    ['SCHD', 'VYM', 'VYMI', 'VIG', 'DVY', 'SDY', 'DGRO'].some(d => t.toUpperCase().includes(d))
+    ['SCHD', 'VYM', 'VYMI', 'VIG', 'DVY', 'SDY', 'DGRO'].some(d => t.toUpperCase() === d)
   );
   const qualityFunds = holdingsList.filter(([t]) => 
-    ['QUAL', 'USMV', 'SPLV', 'MTUM', 'JQUA'].some(q => t.toUpperCase().includes(q))
+    ['QUAL', 'USMV', 'SPLV', 'MTUM', 'JQUA'].some(q => t.toUpperCase() === q)
   );
   const sectorETFs = holdingsList.filter(([t]) => 
     ['XLK', 'XLV', 'XLF', 'XLE', 'XLU', 'XLY', 'XLP', 'XLI', 'XLB', 'XLRE', 'XLC', 'SMH', 'VRT'].some(s => t.toUpperCase() === s)
   );
   const bondFunds = holdingsList.filter(([t]) => 
-    ['BND', 'AGG', 'FBND', 'BNDW', 'VBTLX', 'VBMFX', 'TLT', 'IEF', 'SHY', 'VTIP', 'SGOV', 'VGSH'].some(b => t.toUpperCase().includes(b))
+    ['BND', 'AGG', 'FBND', 'BNDW', 'VBTLX', 'VBMFX', 'TLT', 'IEF', 'SHY', 'VTIP', 'SGOV', 'VGSH'].some(b => t.toUpperCase() === b)
   );
   const individualStocks = holdingsList.filter(([t]) => {
     const upper = t.toUpperCase();
