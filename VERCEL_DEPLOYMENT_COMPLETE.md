@@ -31,19 +31,17 @@ Access: `https://your-domain.vercel.app` (anywhere globally)
 
 ## Environment Variables Needed for Vercel
 
-**Required (app won't work without these):**
-```
-BUILT_IN_FORGE_API_KEY=<your-key>
-BUILT_IN_FORGE_API_URL=https://forge.manus.im
-```
-
-**Optional:**
+**Optional** (set as needed):
 ```
 DATABASE_URL=<mysql-connection-string>
 OAUTH_SERVER_URL=<oauth-endpoint>
 JWT_SECRET=<your-secret>
 VITE_APP_ID=<app-id>
+MARKET_DATA_API_KEY=<your-api-key>
+MARKET_DATA_API_URL=<your-api-url>
 ```
+
+If not set, the app will use built-in or default behavior.
 
 ---
 

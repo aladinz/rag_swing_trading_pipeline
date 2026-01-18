@@ -26,7 +26,7 @@ npm run dev:backend   # Runs on http://localhost:3000
 
 - **GitHub Account:** Push your code to GitHub
 - **Vercel Account:** Sign up at [vercel.com](https://vercel.com)
-- **Environment Variables:** Prepare your secrets
+- **Environment Variables:** Prepare any API keys you need (optional)
 
 ### 2. Deploy to Vercel
 
@@ -36,13 +36,12 @@ npm run dev:backend   # Runs on http://localhost:3000
 2. Select "Import Git Repository"
 3. Find and connect your GitHub repository
 4. Vercel will auto-detect settings from `vercel.json`
-5. Add environment variables:
-   - `BUILT_IN_FORGE_API_KEY` (required)
-   - `BUILT_IN_FORGE_API_URL` (required)
-   - `DATABASE_URL` (if using database)
+5. Add environment variables as needed:
+   - `DATABASE_URL` (if using a database)
    - `OAUTH_SERVER_URL` (if using OAuth)
    - `JWT_SECRET` (if using JWT)
-   - Other secrets as needed
+   - `MARKET_DATA_API_KEY` (if using external market data API)
+   - `MARKET_DATA_API_URL` (if using external market data API)
 6. Click **Deploy**
 
 #### Option B: Deploy via Vercel CLI
@@ -69,14 +68,14 @@ Set these in Vercel Dashboard → Settings → Environment Variables:
 
 | Variable | Required | Example |
 |----------|----------|---------|
-| `BUILT_IN_FORGE_API_KEY` | ✅ Yes | `sk-xxx...` |
-| `BUILT_IN_FORGE_API_URL` | ✅ Yes | `https://forge.manus.im` |
+| `NODE_ENV` | ✅ Yes | `production` |
 | `DATABASE_URL` | ❌ Optional | `mysql://user:pass@host/db` |
 | `OAUTH_SERVER_URL` | ❌ Optional | `https://oauth.example.com` |
 | `OWNER_OPEN_ID` | ❌ Optional | Your OAuth ID |
 | `JWT_SECRET` | ❌ Optional | Generate a secure secret |
 | `VITE_APP_ID` | ❌ Optional | Your app ID |
-| `NODE_ENV` | ✅ Yes | `production` |
+| `MARKET_DATA_API_KEY` | ❌ Optional | Your API key |
+| `MARKET_DATA_API_URL` | ❌ Optional | `https://your-api.com` |
 
 ### 4. Project Structure
 
@@ -123,12 +122,7 @@ Set these in Vercel Dashboard → Settings → Environment Variables:
 ## Common Issues
 
 ### "DATABASE_URL not found"
-**Solution:** Add `DATABASE_URL` to Vercel environment variables
-
-### "BUILT_IN_FORGE_API_KEY is required"
-**Solution:** Set these vars in Vercel Dashboard:
-- `BUILT_IN_FORGE_API_KEY`
-- `BUILT_IN_FORGE_API_URL`
+**Solution:** Add `DATABASE_URL` to Vercel environment variables if using a database
 
 ### Build fails with "NODE_ENV"
 **Solution:** `NODE_ENV=production` is set automatically in `vercel.json`
