@@ -1,15 +1,12 @@
 {
+  "version": 2,
   "buildCommand": "npm run build",
   "devCommand": "npm run dev",
   "installCommand": "npm install",
-  "env": {
-    "NODE_ENV": "production"
-  },
-  "framework": "vite",
-  "functions": {
-    "api/index.ts": {
-      "runtime": "nodejs@20.x",
-      "maxDuration": 60
+  "routes": [
+    {
+      "src": "/(.*)",
+      "dest": "dist/index.js"
     }
-  }
+  ]
 }
