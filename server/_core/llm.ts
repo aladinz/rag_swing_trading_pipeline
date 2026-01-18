@@ -2391,7 +2391,7 @@ const calculateSimplificationScore = (holdingsList: [string, { weight: number }]
 
 // Optimization Summary generator - provides a concise overall health assessment
 const generateOptimizationSummary = (
-  holdingsList: [string, { weight: number }][],
+  holdingsList: [string, { weight: number; sector?: string }][],
   bondsConcentration: number,
   equitiesAllocation: string,
   goldAllocation: number,
@@ -2399,117 +2399,184 @@ const generateOptimizationSummary = (
   overallRiskScore: number,
   simplificationScore: number
 ): string => {
+  // Extract ticker-based analysis
   const portfolioTickers = holdingsList.map(([ticker]) => ticker.toUpperCase());
-  const issues: string[] = [];
-  const strengths: string[] = [];
+  const equityPct = typeof equitiesAllocation === 'string' ? parseFloat(equitiesAllocation) : equitiesAllocation;
+  const holdingCount = holdingsList.length;
   
-  // Categorize holdings
-  const broadMarketFunds = ['FZROX', 'VTI', 'VTSAX', 'ITOT', 'SCHB', 'IWV'];
-  const bondFunds = ['BND', 'AGG', 'FBND', 'VBMFX', 'BNDW', 'BNDX', 'VBTLX'];
-  const dividendFunds = ['VIG', 'SCHD', 'DGRO', 'VYM', 'SDY'];
-  const qualityFunds = ['QUAL', 'DGRW', 'SPHQ'];
-  const sectorETFs = ['XLK', 'XLV', 'XLF', 'XLE', 'XLU', 'XLI', 'XLP', 'XLY', 'XLB', 'XLRE', 'XLC'];
-  const techStocks = ['AAPL', 'MSFT', 'GOOGL', 'GOOG', 'AMZN', 'NVDA', 'TSLA', 'META', 'AVGO'];
+  // Categorize holdings for comprehensive analysis
+  const broadMarketFunds = holdingsList.filter(([t]) => 
+    ['FZROX', 'VTI', 'VTSAX', 'ITOT', 'VOO', 'SPY', 'IVV', 'SPLG', 'SCHB'].some(b => t.toUpperCase() === b)
+  );
+  const internationalFunds = holdingsList.filter(([t]) => 
+    ['VXUS', 'VTIAX', 'VEU', 'IXUS', 'VGTSX', 'VFWAX'].some(i => t.toUpperCase() === i)
+  );
+  const bondFunds = holdingsList.filter(([t]) => 
+    ['BND', 'AGG', 'FBND', 'BNDW', 'VBTLX', 'VBMFX', 'TLT', 'IEF', 'SHY', 'VTIP', 'SGOV', 'VGSH'].some(b => t.toUpperCase() === b)
+  );
+  const dividendFunds = holdingsList.filter(([t]) => 
+    ['SCHD', 'VYM', 'VYMI', 'VIG', 'DVY', 'SDY', 'DGRO'].some(d => t.toUpperCase() === d)
+  );
+  const sectorETFs = holdingsList.filter(([t]) => 
+    ['XLK', 'XLV', 'XLF', 'XLE', 'XLU', 'XLY', 'XLP', 'XLI', 'XLB', 'XLRE', 'XLC'].some(s => t.toUpperCase() === s)
+  );
+  const techStocks = holdingsList.filter(([t]) => 
+    ['AAPL', 'MSFT', 'GOOGL', 'GOOG', 'AMZN', 'META', 'NVDA', 'AVGO', 'TSLA'].includes(t.toUpperCase())
+  );
+  const individualStocks = holdingsList.filter(([t]) => {
+    const upper = t.toUpperCase();
+    const isNotETF = !['ETF', 'FUND', 'BND', 'VT', 'VO', 'VB', 'VX', 'SC', 'AG', 'TI', 'GL', 'US', 'IVV', 'SPY', 'FZR', 'ITI', 'XL', 'VY', 'DV', 'SD', 'SC', 'QU', 'US', 'SP', 'MT'].some(pattern => upper.includes(pattern));
+    return isNotETF && t.length >= 1 && t.length <= 5 && !t.includes('.');
+  });
   
-  // Detect redundancy
-  const totalMarketHeld = broadMarketFunds.filter(t => portfolioTickers.includes(t));
-  const usBondFunds = ['BND', 'AGG', 'FBND', 'VBMFX', 'VBTLX'];
-  const usBondsHeld = usBondFunds.filter(t => portfolioTickers.includes(t));
-  const dividendHeld = dividendFunds.filter(t => portfolioTickers.includes(t));
-  const qualityHeld = qualityFunds.filter(t => portfolioTickers.includes(t));
-  const techETFsHeld = sectorETFs.filter(t => t === 'XLK' && portfolioTickers.includes(t));
-  const techStocksHeld = techStocks.filter(t => portfolioTickers.includes(t));
+  // Detect structural issues
+  const hasBroadMarketOverlap = broadMarketFunds.length >= 2;
+  const hasBondOverlap = bondFunds.length >= 2;
+  const hasDividendRedundancy = dividendFunds.length >= 2;
+  const hasTechCluster = sectorETFs.some(([t]) => t.toUpperCase() === 'XLK') && techStocks.length >= 2;
+  const highPortfolioComplexity = holdingCount > 20;
+  const hasLowBonds = bondsConcentration < 20 && equityPct > 70;
+  const hasHighTech = techConcentration > 30;
+  const hasInternational = internationalFunds.length > 0;
+  const internationalPct = internationalFunds.reduce((sum, [_, h]) => sum + h.weight, 0);
+  const lowInternational = internationalPct < 5 && equityPct > 30;
   
-  // Identify issues
-  if (totalMarketHeld.length >= 2) {
-    issues.push('index-level redundancy');
-  }
-  if (usBondsHeld.length >= 2) {
-    issues.push('bond fund overlap');
-  }
-  if (dividendHeld.length >= 2 || (dividendHeld.length >= 1 && qualityHeld.length >= 1)) {
-    issues.push('factor redundancy');
-  }
-  if (techETFsHeld.length >= 1 && techStocksHeld.length >= 1) {
-    issues.push('tech cluster overlap');
-  }
-  if (techConcentration > 20) {
-    issues.push('tech concentration');
-  }
-  if (bondsConcentration < 20) {
-    issues.push('low bond allocation for defensive positioning');
-  }
-  if (holdingsList.length > 20) {
-    issues.push('portfolio complexity');
-  }
+  // Calculate redundancy metrics
+  let redundancyLevel = 0;
+  if (hasBroadMarketOverlap) redundancyLevel += 2;
+  if (hasBondOverlap) redundancyLevel += 1;
+  if (hasDividendRedundancy) redundancyLevel += 1;
+  if (hasTechCluster) redundancyLevel += 1;
   
-  // Identify strengths
-  if (bondsConcentration >= 20 && bondsConcentration <= 40) {
-    strengths.push('balanced bond allocation');
-  }
-  if (bondsConcentration > 40) {
-    strengths.push('strong defensive positioning');
-  }
-  const internationalFunds = ['VXUS', 'VTIAX', 'IXUS', 'VEA', 'VWO'];
-  const hasInternational = internationalFunds.some(t => portfolioTickers.includes(t));
-  if (hasInternational) {
-    strengths.push('global diversification');
-  }
-  if (holdingsList.length <= 15) {
-    strengths.push('manageable portfolio size');
-  }
-  if (techConcentration <= 15) {
-    strengths.push('controlled sector concentration');
-  }
-  
-  // Build summary
+  // PARAGRAPH 1: Overall Health & Summary
   let summary = '';
   
-  // Overall health assessment
-  if (overallRiskScore <= 3) {
-    summary += 'Your portfolio is in excellent shape with minimal structural issues. ';
-  } else if (overallRiskScore <= 5) {
-    summary += 'Your portfolio is generally healthy with some opportunities for optimization. ';
-  } else if (overallRiskScore <= 7) {
-    summary += 'Your portfolio has moderate structural issues that should be addressed. ';
+  if (overallRiskScore <= 3 && simplificationScore >= 8) {
+    summary += `This portfolio is in excellent structural health. It demonstrates thoughtful diversification across asset classes with ${holdingCount} holdings providing clean, focused exposure. The ${bondsConcentration.toFixed(0)}% bond allocation creates a solid defensive foundation, while the ${equityPct.toFixed(0)}% equity mix balances growth potential with volatility management. `;
+  } else if (overallRiskScore <= 5 && redundancyLevel <= 1) {
+    summary += `This portfolio is well-structured for long-term growth with generally good health and minimal issues. The ${holdingCount}-holding portfolio combines broad market exposure with targeted factor positioning. With ${bondsConcentration.toFixed(0)}% bonds and ${equityPct.toFixed(0)}% equities, the asset mix provides reasonable protection during market downturns while maintaining adequate growth capacity. `;
+  } else if (overallRiskScore <= 6) {
+    summary += `This portfolio has solid fundamentals but contains some overlapping positions that create unnecessary complexity without adding value. The ${holdingCount} holdings provide broad market exposure, but several fund categories are represented by multiple similar products. Restructuring these redundancies could improve clarity and lower costs without sacrificing diversification. `;
   } else {
-    summary += 'Your portfolio requires significant optimization to reduce risk and complexity. ';
+    summary += `This portfolio needs optimization to improve both structure and clarity. With ${holdingCount} holdings, the portfolio is difficult to manage efficiently, and multiple overlapping positions work against each other. Simplification should be the primary focus to reduce complexity and create a cleaner, more intentional allocation. `;
   }
   
-  // Key strengths
+  // PARAGRAPH 2: Specific Strengths
+  const strengths: string[] = [];
+  
+  if (bondsConcentration >= 25 && bondsConcentration <= 45) {
+    strengths.push(`balanced bond structure with ${bondsConcentration.toFixed(0)}% providing cushion during downturns`);
+  } else if (bondsConcentration > 45) {
+    strengths.push(`strong defensive positioning with ${bondsConcentration.toFixed(0)}% bonds protecting capital`);
+  }
+  
+  if (hasInternational && internationalPct >= 15) {
+    strengths.push(`meaningful geographic diversification with ${internationalPct.toFixed(0)}% in international markets`);
+  }
+  
+  if (broadMarketFunds.length >= 1 && !hasBroadMarketOverlap) {
+    strengths.push(`clean core exposure through ${broadMarketFunds.map(([t]) => t).join(' and ')}`);
+  }
+  
+  if (holdingCount <= 12) {
+    strengths.push(`manageable portfolio size of ${holdingCount} holdings`);
+  }
+  
+  if (techConcentration <= 20) {
+    strengths.push(`controlled sector concentration with tech at ${techConcentration.toFixed(0)}%`);
+  }
+  
   if (strengths.length > 0) {
-    summary += `Key strengths include ${strengths.slice(0, 2).join(' and ')}. `;
+    summary += `Key strengths: ${strengths.slice(0, 3).join('; ')}. `;
   }
   
-  // Primary concerns
-  if (issues.length > 0) {
-    summary += `Primary concerns: ${issues.slice(0, 3).join(', ')}. `;
+  // PARAGRAPH 3: Specific Weaknesses & Redundancy
+  const weaknesses: string[] = [];
+  
+  if (hasBroadMarketOverlap) {
+    const funds = broadMarketFunds.map(([t]) => t).join(' and ');
+    weaknesses.push(`index-level redundancy with ${funds} tracking near-identical U.S. total market exposure`);
+  }
+  
+  if (hasBondOverlap) {
+    const funds = bondFunds.map(([t]) => t).join(' and ');
+    weaknesses.push(`bond fund overlap where ${funds} track similar indexes with ${bondFunds.length > 2 ? 'substantial' : 'significant'} holdings overlap`);
+  }
+  
+  if (hasDividendRedundancy) {
+    weaknesses.push(`dividend factor redundancy with multiple funds targeting similar high-yield stocks`);
+  }
+  
+  if (hasTechCluster) {
+    const clustered = [...sectorETFs.filter(([t]) => t.toUpperCase() === 'XLK').map(([t]) => t), ...techStocks.map(([t]) => t)];
+    weaknesses.push(`technology cluster combining ${clustered.slice(0, 3).join(', ')}${clustered.length > 3 ? ' and others' : ''} creates concentrated sector risk`);
+  }
+  
+  if (hasLowBonds) {
+    weaknesses.push(`low bond allocation of ${bondsConcentration.toFixed(0)}% limits downside protection`);
+  }
+  
+  if (hasHighTech) {
+    weaknesses.push(`tech concentration at ${techConcentration.toFixed(0)}% creates significant sector risk`);
+  }
+  
+  if (lowInternational) {
+    weaknesses.push(`minimal international exposure with only ${internationalPct.toFixed(0)}% outside U.S. markets`);
+  }
+  
+  if (highPortfolioComplexity) {
+    weaknesses.push(`${holdingCount}-holding portfolio creates management complexity and decision burden`);
+  }
+  
+  if (weaknesses.length > 0) {
+    summary += `Areas for improvement: ${weaknesses.slice(0, 3).join('; ')}. `;
   } else {
-    summary += 'No significant structural concerns identified. ';
+    summary += `No significant structural weaknesses identified. `;
   }
   
-  // Reference simplification score
-  if (simplificationScore < 7) {
-    summary += `Your simplification score is ${simplificationScore}/10, indicating room for consolidation. `;
-  } else if (simplificationScore >= 9) {
-    summary += `Your simplification score is ${simplificationScore}/10, reflecting excellent portfolio structure. `;
-  }
-  
-  // Top priority recommendation
-  if (totalMarketHeld.length >= 2) {
-    const keepFund = totalMarketHeld.includes('FZROX') ? 'FZROX' : 'VTI';
-    summary += `Top priority: consolidate total market funds into ${keepFund} to eliminate redundancy.`;
-  } else if (techETFsHeld.length >= 1 && techStocksHeld.length >= 1) {
-    summary += `Top priority: reduce tech cluster overlap by consolidating individual tech stocks into XLK or trimming sector allocation.`;
-  } else if (usBondsHeld.length >= 2) {
-    const keepBond = usBondsHeld.includes('FBND') ? 'FBND' : usBondsHeld.includes('BND') ? 'BND' : 'AGG';
-    summary += `Top priority: consolidate bond funds into ${keepBond} to simplify fixed-income exposure.`;
-  } else if (bondsConcentration < 20) {
-    summary += `Top priority: consider increasing bond allocation to 20-30% for better downside protection, especially if this is a retirement account.`;
-  } else if (issues.length === 0) {
-    summary += `Continue monitoring and rebalancing annually to maintain optimal structure.`;
+  // PARAGRAPH 4: Simplification Score Interpretation
+  const simplScore = Math.round(simplificationScore);
+  if (simplScore >= 9) {
+    summary += `The simplification score of ${simplScore}/10 reflects excellent portfolio structure—holdings are clearly defined with minimal overlap, making the portfolio easy to understand and manage. This clean structure reduces decision fatigue and ensures each position serves a distinct purpose. `;
+  } else if (simplScore >= 7) {
+    summary += `The simplification score of ${simplScore}/10 indicates a generally clean portfolio with room for minor optimization. Most redundancies are minimal, though consolidating a few overlapping positions could improve clarity further. `;
+  } else if (simplScore >= 4) {
+    summary += `The simplification score of ${simplScore}/10 suggests moderate complexity from overlapping holdings. Consolidating similar funds and reducing portfolio size would meaningfully improve structure and lower cognitive load. `;
   } else {
-    summary += `Focus on simplification: reducing overlapping positions will improve clarity and reduce management burden.`;
+    summary += `The simplification score of ${simplScore}/10 indicates the portfolio is overly complex with significant redundancy. This complexity works against you by creating overlapping exposures without additional benefit. Aggressive consolidation is recommended. `;
+  }
+  
+  // PARAGRAPH 5: Top Priorities
+  let priorities: string[] = [];
+  
+  if (hasBroadMarketOverlap) {
+    const toKeep = broadMarketFunds.find(([t]) => t.toUpperCase() === 'FZROX') ? 'FZROX' : 
+                   broadMarketFunds.find(([t]) => t.toUpperCase() === 'VTI') ? 'VTI' : 
+                   broadMarketFunds[0][0];
+    priorities.push(`Consolidate total market funds into ${toKeep} to eliminate redundancy and reduce fund count by ${broadMarketFunds.length - 1}.`);
+  }
+  
+  if (hasBondOverlap && bondFunds.length >= 2) {
+    const toKeep = bondFunds.find(([t]) => t.toUpperCase() === 'BND') ? 'BND' : 
+                   bondFunds.find(([t]) => t.toUpperCase() === 'AGG') ? 'AGG' : 
+                   bondFunds[0][0];
+    priorities.push(`Consolidate bond funds into ${toKeep} to simplify fixed-income exposure.`);
+  }
+  
+  if (hasTechCluster && techStocks.length >= 2) {
+    priorities.push(`Reduce tech cluster overlap by replacing individual tech stocks with XLK sector exposure, or eliminate one category entirely to avoid double-counting.`);
+  }
+  
+  if (hasLowBonds && bondsConcentration < 15) {
+    priorities.push(`Increase bond allocation to 20-25% for meaningful downside protection during corrections.`);
+  }
+  
+  if (priorities.length === 0 && overallRiskScore > 3) {
+    priorities.push(`Continue annual rebalancing and monitor for drift, especially in sector allocations.`);
+  }
+  
+  if (priorities.length > 0) {
+    summary += `Top ${priorities.length === 1 ? 'priority' : 'priorities'}: ${priorities.slice(0, 2).join(' ').trim()}`;
   }
   
   return summary;
